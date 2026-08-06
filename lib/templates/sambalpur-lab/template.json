@@ -1,0 +1,75 @@
+{
+  "id": "sambalpur-lab",
+  "name": "Sambalpur University — Lab Record",
+  "description": "SUIIT Burla lab coverpage with university seal and bordered details box",
+  "thumbnail": "/templates/sambalpur-lab/thumb.png",
+  "layout": "classic-seal",
+  "brand": {
+    "institution": ["SAMBALPUR UNIVERSITY", "INSTITUTE OF INFORMATION TECHNOLOGY"],
+    "address": "Jyoti Vihar, Burla",
+    "logo": "/templates/sambalpur-lab/seal.png",
+    "logoWidthMm": 62,
+    "font": "times",
+    "border": "double"
+  },
+  "fields": [
+    {
+      "key": "labName",
+      "slot": "title",
+      "label": "Lab Name",
+      "type": "text",
+      "required": true,
+      "maxLength": 30,
+      "placeholder": "CN LAB"
+    },
+    {
+      "key": "semester",
+      "slot": "subtitle",
+      "label": "Semester",
+      "type": "select",
+      "required": true,
+      "options": [
+        "1st Semester",
+        "2nd Semester",
+        "3rd Semester",
+        "4th Semester",
+        "5th Semester",
+        "6th Semester",
+        "7th Semester",
+        "8th Semester"
+      ]
+    },
+    {
+      "key": "name",
+      "slot": "details",
+      "label": "Name",
+      "type": "text",
+      "required": true,
+      "maxLength": 32,
+      "placeholder": "DEBASHISH PRADHAN"
+    },
+    {
+      "key": "rollNo",
+      "slot": "details",
+      "label": "Roll no",
+      "type": "text",
+      "required": true,
+      "maxLength": 20,
+      "placeholder": "24BTCSE04"
+    },
+    {
+      "key": "section",
+      "slot": "details",
+      "label": "Section",
+      "type": "select",
+      "options": ["A", "B", "C", "D"]
+    },
+    {
+      "key": "branch",
+      "slot": "details",
+      "label": "Branch",
+      "type": "select",
+      "options": ["CSE", "IT", "ECE", "EE", "ME", "CE"]
+    }
+  ]
+}

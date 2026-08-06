@@ -1,0 +1,139 @@
+/*
+ * classic-seal — centred institution block, seal, title, and a boxed
+ * "Submitted By" details table. Geometry measured from the Sambalpur reference
+ * PDF (see scripts/inspect-pdf.mjs) and normalised from its 299.9mm export
+ * height to true A4.
+ *
+ * Everything is in mm/pt so preview, PDF, and paper agree. Brand knobs arrive
+ * as CSS custom properties set on .cs-page by the component.
+ */
+
+.cs-page {
+  width: 210mm;
+  height: 297mm;
+  box-sizing: border-box;
+  position: relative;
+  background: #fff;
+  color: var(--cs-accent, #000);
+  font-family: var(--cs-font, 'Times New Roman', Times, serif);
+  text-align: center;
+  overflow: hidden;
+}
+
+/* Border treatments. Reference uses a single thick rounded frame. */
+.cs-border {
+  position: absolute;
+  inset: 7mm;
+  border-radius: 4mm;
+  pointer-events: none;
+}
+.cs-page[data-border='single'] .cs-border {
+  border: 1.2mm solid var(--cs-accent, #000);
+}
+.cs-page[data-border='double'] .cs-border {
+  border: 1.2mm solid var(--cs-accent, #000);
+}
+.cs-page[data-border='double'] .cs-border::after {
+  content: '';
+  position: absolute;
+  inset: 1.6mm;
+  border: 0.4mm solid var(--cs-accent, #000);
+  border-radius: 2.8mm;
+}
+.cs-page[data-border='none'] .cs-border {
+  display: none;
+}
+
+.cs-content {
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 30mm 20mm 20mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Institution block: first heading line sits at ~42mm in the reference. */
+.cs-institution {
+  font-size: 20pt;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.cs-address {
+  font-size: 18.5pt;
+  font-weight: 700;
+  margin: 3mm 0 0;
+}
+
+/* Seal fills the band between address (~64mm) and title (~167mm). */
+.cs-logo-band {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4mm 0;
+}
+.cs-logo {
+  width: var(--cs-logo-width, 55mm);
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.cs-title {
+  font-size: 24pt;
+  font-weight: 700;
+  margin: 0;
+}
+.cs-subtitle {
+  font-size: 24pt;
+  font-weight: 700;
+  margin: 3.5mm 0 0;
+}
+
+/* Details box: rounded frame around "Submitted By :-" and label : value rows.
+ * Reference rows: labels left-aligned, colon at a fixed column, 13mm pitch. */
+.cs-details {
+  width: 152mm;
+  box-sizing: border-box;
+  margin: 9mm 0 0;
+  padding: 4mm 6mm 5mm;
+  border: 1mm solid var(--cs-accent, #000);
+  border-radius: 3mm;
+  text-align: left;
+  font-size: 20pt;
+}
+.cs-details-heading {
+  margin: 0 0 1mm;
+}
+.cs-details-table {
+  border-collapse: collapse;
+}
+.cs-details-table td {
+  padding: 0.8mm 0;
+  vertical-align: top;
+}
+/* td type selector above outranks a lone class — match it. */
+.cs-details-table td.cs-details-label {
+  min-width: 33mm;
+  white-space: nowrap;
+  padding-right: 3mm;
+}
+.cs-details-table td.cs-details-colon {
+  padding-right: 4mm;
+}
+.cs-details-table td.cs-details-value {
+  max-width: 95mm;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Empty-state placeholders in the preview render grey; a generated PDF always
+ * has values, so this never shows in output. */
+.cs-placeholder {
+  color: #999;
+}

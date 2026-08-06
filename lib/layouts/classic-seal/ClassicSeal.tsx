@@ -1,0 +1,82 @@
+/* eslint-disable @next/next/no-img-element -- next/image needs the runtime;
+ * layouts must render via renderToStaticMarkup in the PDF route. */
+import type { LayoutProps } from '@/lib/templates/types'
+import { fieldsInSlot } from '@/lib/templates/types'
+import './classic-seal.css'
+
+const FONT_STACKS: Record<string, string> = {
+  times: "'Times New Roman', Times, serif",
+  serif: 'Georgia, "Times New Roman", serif',
+  sans: 'Arial, Helvetica, sans-serif',
+  garamond: 'Garamond, "EB Garamond", "Times New Roman", serif',
+}
+
+/**
+ * Centred institution block, seal, document title, and a boxed "Submitted By"
+ * details table. The classic Indian college coverpage.
+ *
+ * Pure function of its props — no hooks, no browser APIs — because the PDF
+ * route renders it with renderToStaticMarkup on the server.
+ */
+export function ClassicSeal({ brand, fields, values }: LayoutProps) {
+  const title = fieldsInSlot(fields, 'title')[0]
+  const subtitle = fieldsInSlot(fields, 'subtitle')[0]
+  const details = fieldsInSlot(fields, 'details')
+
+  const show = (key: string | undefined, placeholder: string) => {
+    const v = key ? values[key]?.trim() : undefined
+    return v ? (
+      v
+    ) : (
+      <span className="cs-placeholder">{placeholder}</span>
+    )
+  }
+
+  return (
+    <div
+      className="cs-page"
+      data-border={brand.border}
+      style={
+        {
+          '--cs-font': FONT_STACKS[brand.font] ?? FONT_STACKS.times,
+          '--cs-accent': brand.accentColor ?? '#000',
+          '--cs-logo-width': `${brand.logoWidthMm ?? 55}mm`,
+        } as React.CSSProperties
+      }
+    >
+      <div className="cs-border" />
+      <div className="cs-content">
+        {brand.institution.map((line) => (
+          <h1 className="cs-institution" key={line}>
+            {line}
+          </h1>
+        ))}
+        {brand.address && <p className="cs-address">{brand.address}</p>}
+
+        <div className="cs-logo-band">
+          {brand.logo && <img className="cs-logo" src={brand.logo} alt="" />}
+        </div>
+
+        {title && <p className="cs-title">{show(title.key, `[${title.label}]`)}</p>}
+        {subtitle && <p className="cs-subtitle">{show(subtitle.key, `[${subtitle.label}]`)}</p>}
+
+        {details.length > 0 && (
+          <div className="cs-details">
+            <p className="cs-details-heading">Submitted By :-</p>
+            <table className="cs-details-table">
+              <tbody>
+                {details.map((f) => (
+                  <tr key={f.key}>
+                    <td className="cs-details-label">{f.label}</td>
+                    <td className="cs-details-colon">:</td>
+                    <td className="cs-details-value">{show(f.key, `[${f.label}]`)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

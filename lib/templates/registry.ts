@@ -1,5 +1,6 @@
 import type { LayoutComponent, TemplateMeta } from './types'
 import { getLayout } from '@/lib/layouts/registry'
+import sambalpurLab from './sambalpur-lab/template.json'
 
 export interface RegisteredTemplate {
   meta: TemplateMeta
@@ -18,7 +19,7 @@ export interface RegisteredTemplate {
  * add one entry here. No component, no CSS.
  */
 const templates: RegisteredTemplate[] = [
-  // { meta: sambalpurLab as TemplateMeta },
+  { meta: sambalpurLab as TemplateMeta },
 ]
 
 const byId = new Map(templates.map((t) => [t.meta.id, t]))

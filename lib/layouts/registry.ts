@@ -1,4 +1,5 @@
 import type { LayoutComponent, LayoutId, SlotId } from '@/lib/templates/types'
+import { ClassicSeal } from './classic-seal/ClassicSeal'
 
 export interface RegisteredLayout {
   Component: LayoutComponent
@@ -15,7 +16,7 @@ export interface RegisteredLayout {
  * template registry instead.
  */
 export const layouts: Partial<Record<LayoutId, RegisteredLayout>> = {
-  // 'classic-seal': { Component: ClassicSeal, slots: ['title', 'subtitle', 'details'] },
+  'classic-seal': { Component: ClassicSeal, slots: ['title', 'subtitle', 'details'] },
 }
 
 export function getLayout(id: LayoutId): RegisteredLayout | undefined {
