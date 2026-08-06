@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildTemplateCsv, matchCsv, parseCsv } from './csv'
+import { buildTemplateCsv, matchCsv, parseCsv, parseDelimited } from './csv'
 import type { FieldDef } from '@/lib/templates/types'
 
 const fields: FieldDef[] = [
@@ -58,9 +58,37 @@ describe('matchCsv', () => {
     expect(rows[0].values).toEqual({ name: 'Asha', roll: '42', section: 'A' })
   })
 
-  it('reports missing required columns and ignores extra ones', () => {
+  it('blocks only when a required field has no column and no form value', () => {
     const { missingColumns } = matchCsv([['Name', 'Email'], ['Asha', 'a@x.com']], fields)
     expect(missingColumns).toEqual(['Roll No'])
+  })
+
+  it('falls back to form values for missing columns and reports them', () => {
+    const { rows, fromForm, missingColumns } = matchCsv(
+      [
+        ['Name'],
+        ['Asha'],
+        ['Ravi'],
+      ],
+      fields,
+      { roll: '42', section: 'A' },
+    )
+    expect(missingColumns).toEqual([])
+    expect(fromForm).toEqual(['Roll No', 'Section'])
+    expect(rows.map((r) => r.values.roll)).toEqual(['42', '42'])
+    expect(rows.every((r) => r.errors.length === 0)).toBe(true)
+  })
+
+  it('lets a present column win over the form value', () => {
+    const { rows } = matchCsv(
+      [
+        ['Name', 'Roll No'],
+        ['Asha', '99'],
+      ],
+      fields,
+      { roll: '42' },
+    )
+    expect(rows[0].values.roll).toBe('99')
   })
 
   it('flags empty required, bad select, and overlong values per row', () => {

@@ -185,6 +185,27 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
           onSelect={setTemplateId}
           onDelete={removeCustom}
         />
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {customIds.has(meta.id) && (
+            <button type="button" className="btn-ghost" onClick={shareCurrent}>
+              Share this template (copy link)
+            </button>
+          )}
+          <button type="button" className="btn-ghost" onClick={exportBackup}>
+            Export backup
+          </button>
+          <button type="button" className="btn-ghost" onClick={() => restoreRef.current?.click()}>
+            Restore backup
+          </button>
+          <input
+            ref={restoreRef}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={(e) => importBackup(e.target.files?.[0])}
+          />
+          {notice && <p className="w-full text-xs text-pencil">{notice}</p>}
+        </div>
       </section>
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(280px,400px)_1fr]">
@@ -211,7 +232,7 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
           )}
 
           <CustomizePanel brand={baseMeta.brand} overrides={overrides} onChange={setOverrides} />
-          <BulkPanel meta={meta} buildRequestBody={buildRequestBody} />
+          <BulkPanel meta={meta} formValues={values} buildRequestBase={buildRequestBase} />
         </section>
 
         <section aria-label="Preview" className="min-w-0 lg:sticky lg:top-8">
