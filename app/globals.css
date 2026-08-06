@@ -1,28 +1,167 @@
 @import "tailwindcss";
 
+/*
+ * Coverpage Maker — "ruled notebook" identity.
+ *
+ * The subject is school stationery: the A4 sheet, the ruled page, the red
+ * margin line every Indian student wrote against. The app chrome plays the
+ * notebook; the user's coverpage plays the loose sheet lying on it.
+ *
+ *   ink     #1C2B6B  headings, buttons — fountain-pen blue-black
+ *   paper   #FBFAF6  app background
+ *   sheet   #FFFFFF  cards and the A4 page itself
+ *   rule    #C9D6E8  ruled lines, borders — faded ballpoint blue
+ *   margin  #D6453D  the red margin line; accent, required marks
+ *   pencil  #4A5165  body text — graphite
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #1c2b6b;
+  --paper: #fbfaf6;
+  --sheet: #ffffff;
+  --rule: #c9d6e8;
+  --margin: #d6453d;
+  --pencil: #4a5165;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-sheet: var(--sheet);
+  --color-rule: var(--rule);
+  --color-margin: var(--margin);
+  --color-pencil: var(--pencil);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--pencil);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display), system-ui, sans-serif;
+  color: var(--ink);
+}
+
+/*
+ * The signature: a ruled-paper card with the red margin line. Content sits
+ * right of the margin, exactly like writing on the page.
+ */
+.ruled-card {
+  position: relative;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 31px,
+      color-mix(in srgb, var(--rule) 42%, transparent) 31px,
+      color-mix(in srgb, var(--rule) 42%, transparent) 32px
+    ),
+    var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgb(28 43 107 / 0.07);
+}
+.ruled-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2.25rem;
+  width: 1px;
+  background: color-mix(in srgb, var(--margin) 55%, transparent);
+  pointer-events: none;
+}
+.ruled-card > * {
+  position: relative;
+}
+
+/* Notebook name-label: the little bordered slip on a copy's cover. */
+.name-slip {
+  display: inline-block;
+  border: 1.5px solid var(--ink);
+  border-radius: 2px;
+  padding: 0.35rem 0.9rem;
+  background: var(--sheet);
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--ink) 18%, transparent);
+}
+
+/* Inputs read as ballpoint on the rule. */
+.field-input {
+  width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--sheet);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--ink);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.field-input:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 1px 0 0 var(--ink);
+}
+.field-input::placeholder {
+  color: color-mix(in srgb, var(--pencil) 45%, transparent);
+}
+
+.btn-ink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--ink);
+  color: var(--sheet);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 2px;
+  transition: transform 100ms ease, box-shadow 100ms ease, opacity 120ms ease;
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--ink) 30%, transparent);
+}
+.btn-ink:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--ink) 30%, transparent);
+}
+.btn-ink:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 0 0 0 transparent;
+}
+.btn-ink:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--sheet);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.45rem 0.9rem;
+  transition: border-color 120ms ease;
+}
+.btn-ghost:hover {
+  border-color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-ink, .btn-ink:hover, .btn-ink:active {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Keyboard focus, everywhere. */
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 /*

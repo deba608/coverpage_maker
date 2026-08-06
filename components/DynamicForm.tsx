@@ -22,26 +22,21 @@ export function DynamicForm({
     <form className="flex flex-col gap-4" onSubmit={(e) => e.preventDefault()}>
       {fields.map((field) => {
         const id = `field-${field.key}`
-        const common =
-          'w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm ' +
-          'focus:border-neutral-900 focus:outline-none dark:border-neutral-700 ' +
-          'dark:bg-neutral-900 dark:focus:border-neutral-100'
-
         return (
           <div key={field.key}>
-            <label htmlFor={id} className="mb-1 block text-sm font-medium">
+            <label htmlFor={id} className="mb-1 block text-[0.8125rem] font-semibold text-ink">
               {field.label}
-              {field.required && <span className="text-red-600"> *</span>}
+              {field.required && <span className="text-margin"> *</span>}
             </label>
 
             {field.type === 'select' ? (
               <select
                 id={id}
-                className={common}
+                className="field-input"
                 value={values[field.key] ?? ''}
                 onChange={(e) => set(field.key, e.target.value)}
               >
-                <option value="">— select —</option>
+                <option value="">Choose…</option>
                 {field.options?.map((opt) => (
                   <option key={opt} value={opt}>
                     {opt}
@@ -51,7 +46,7 @@ export function DynamicForm({
             ) : (
               <input
                 id={id}
-                className={common}
+                className="field-input"
                 type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
                 value={values[field.key] ?? ''}
                 placeholder={field.placeholder}

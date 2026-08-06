@@ -28,10 +28,23 @@ export const fieldDefSchema = z
     path: ['options'],
   })
 
+/**
+ * Repo templates reference assets under /public; imported templates carry them
+ * inline as data URIs (they live in the user's browser, not the repo). The cap
+ * keeps a hostile payload from inflating the render lambda's memory.
+ */
+const assetRef = z
+  .string()
+  .max(1_000_000)
+  .refine(
+    (s) => s.startsWith('/') || /^data:image\/(png|jpeg|webp);base64,/.test(s),
+    'must be a /public path or a png/jpeg/webp data URI',
+  )
+
 export const brandConfigSchema = z.object({
-  institution: z.array(z.string().min(1)).min(1).max(3),
-  address: z.string().optional(),
-  logo: z.string().startsWith('/').optional(),
+  institution: z.array(z.string().min(1).max(80)).min(1).max(3),
+  address: z.string().max(120).optional(),
+  logo: assetRef.optional(),
   logoWidthMm: z.number().positive().max(200).optional(),
   font: z.enum(['serif', 'sans', 'times', 'garamond']),
   border: z.enum(['double', 'single', 'none']),
@@ -48,7 +61,7 @@ export const templateMetaSchema = z
     id: z.string().regex(/^[a-z0-9-]+$/, 'id must be lowercase kebab-case'),
     name: z.string().min(1),
     description: z.string().min(1),
-    thumbnail: z.string().startsWith('/'),
+    thumbnail: assetRef,
     layout: layoutIdSchema,
     brand: brandConfigSchema,
     fields: z.array(fieldDefSchema).min(1),

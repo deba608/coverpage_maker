@@ -47,6 +47,8 @@ async function fontFaces(): Promise<string> {
 /** Logos are inlined as data URIs so Chromium never makes a network request. */
 async function inlineLogo(logoPath: string | undefined): Promise<string | undefined> {
   if (!logoPath) return undefined
+  // Imported templates already carry their logo inline.
+  if (logoPath.startsWith('data:')) return logoPath
   const file = await readFile(join(process.cwd(), 'public', logoPath))
   const mime = logoPath.endsWith('.svg') ? 'image/svg+xml' : 'image/png'
   return `data:${mime};base64,${file.toString('base64')}`

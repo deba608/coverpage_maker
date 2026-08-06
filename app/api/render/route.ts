@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { getTemplate } from '@/lib/templates/registry'
-import { valuesSchemaFor } from '@/lib/templates/schema'
+import { getTemplate, type ResolvedTemplate } from '@/lib/templates/registry'
+import { getLayout } from '@/lib/layouts/registry'
+import { templateMetaSchema, valuesSchemaFor } from '@/lib/templates/schema'
+import type { TemplateMeta } from '@/lib/templates/types'
 import { buildHtml } from '@/lib/pdf/render'
 import { getBrowser } from '@/lib/pdf/browser'
 
@@ -9,21 +11,39 @@ export const runtime = 'nodejs'
 export const maxDuration = 30
 
 const bodySchema = z.object({
-  templateId: z.string(),
+  templateId: z.string().optional(),
+  // Imported templates live only in the sender's browser, so their definition
+  // travels with the request instead of a registry id.
+  meta: z.unknown().optional(),
   values: z.record(z.string(), z.string()),
 })
 
-/** POST { templateId, values } → application/pdf */
+/** POST { templateId | meta, values } → application/pdf */
 export async function POST(request: Request) {
   const parsedBody = bodySchema.safeParse(await request.json().catch(() => null))
   if (!parsedBody.success) {
     return NextResponse.json({ error: 'Malformed request body' }, { status: 400 })
   }
-  const { templateId, values } = parsedBody.data
+  const { templateId, meta, values } = parsedBody.data
 
-  const template = getTemplate(templateId)
-  if (!template) {
-    return NextResponse.json({ error: `Unknown template '${templateId}'` }, { status: 400 })
+  let template: ResolvedTemplate | undefined
+  if (templateId) {
+    template = getTemplate(templateId)
+    if (!template) {
+      return NextResponse.json({ error: `Unknown template '${templateId}'` }, { status: 400 })
+    }
+  } else {
+    // Inline meta is client input — full schema validation, and it must name a
+    // shared layout ('custom' means arbitrary code, which a request cannot ship).
+    const parsedMeta = templateMetaSchema.safeParse(meta)
+    if (!parsedMeta.success) {
+      return NextResponse.json({ error: 'Invalid template definition' }, { status: 400 })
+    }
+    const layout = parsedMeta.data.layout !== 'custom' ? getLayout(parsedMeta.data.layout) : undefined
+    if (!layout) {
+      return NextResponse.json({ error: 'Template must use a shared layout' }, { status: 400 })
+    }
+    template = { meta: parsedMeta.data as TemplateMeta, Component: layout.Component }
   }
 
   // Defence in depth: the UI disables download until required fields are
