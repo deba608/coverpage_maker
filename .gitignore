@@ -1,0 +1,83 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# credentials & secrets
+.env
+.env.*
+!.env.example
+!.env.template
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+*.pfx
+*.asc
+*.keystore
+*.jks
+credentials
+credentials.json
+credentials.yaml
+credentials.yml
+secrets/
+secrets.json
+secrets.yaml
+secrets.yml
+service-account*.json
+service_account*.json
+id_rsa
+id_rsa*
+id_ed25519
+id_ed25519*
+
+# AI tools & config files
+.claude/
+.claude*
+CLAUDE.md
+.gemini/
+.openai/
+.cursor/
+.windsurf/
+.v0/
+.copilot/
+.agents/
+.antigravity/
+.ai/
+*.prompts
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
