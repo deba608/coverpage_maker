@@ -33,12 +33,25 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
   )
   const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const restoreRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     // Deliberate one-time post-mount read — localStorage does not exist on the
     // server, and reading it during render would break hydration.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCustomTemplates(listCustomTemplates())
+
+    // Share links carry a template in the URL fragment. Ask before adopting —
+    // a link is untrusted input even after schema validation.
+    const shared = readSharedTemplate()
+    if (shared && window.confirm(`Add the shared template "${shared.name}"?`)) {
+      saveCustomTemplate(shared)
+      setCustomTemplates(listCustomTemplates())
+      setTemplateId(shared.id)
+    }
+    if (shared) clearShareHash()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only intake
   }, [])
 
   const all = [...templates, ...customTemplates]
@@ -68,11 +81,52 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
   }
 
   // Overridden templates must travel inline: the registry copy on the server
-  // doesn't know about this browser's customizations.
-  function buildRequestBody(vals: TemplateValues): object {
+  // doesn't know about this browser's customizations. Callers add `values`
+  // (single) or `rows` (merged bulk) on top.
+  function buildRequestBase(): object {
     return customIds.has(meta.id) || hasOverrides(overrides)
-      ? { meta, values: vals }
-      : { templateId: meta.id, values: vals }
+      ? { meta }
+      : { templateId: meta.id }
+  }
+
+  function exportBackup() {
+    const blob = buildBackup(overridesById, values)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'coverpage-backup.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function importBackup(file: File | undefined) {
+    if (!file) return
+    setNotice(null)
+    try {
+      const restored = restoreBackup(await file.text())
+      setCustomTemplates(listCustomTemplates())
+      setOverridesById({ ...overridesById, ...restored.overrides })
+      setValues({ ...values, ...restored.values })
+      setNotice(
+        `Backup restored: ${restored.templates.length} template${
+          restored.templates.length === 1 ? '' : 's'
+        }, settings, and form values.`,
+      )
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : 'Could not read that backup file')
+    } finally {
+      if (restoreRef.current) restoreRef.current.value = ''
+    }
+  }
+
+  async function shareCurrent() {
+    const { url, logoStripped } = buildShareUrl(meta)
+    await navigator.clipboard.writeText(url)
+    setNotice(
+      logoStripped
+        ? 'Share link copied. The seal image was too large to fit in a link — the recipient adds their own.'
+        : 'Share link copied to the clipboard.',
+    )
   }
 
   function removeCustom(id: string) {
@@ -85,7 +139,7 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
     setDownloading(true)
     setError(null)
     try {
-      const body = buildRequestBody(values)
+      const body = { ...buildRequestBase(), values }
       const res = await fetch('/api/render', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
