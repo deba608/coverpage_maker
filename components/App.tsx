@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { LayoutComponent, TemplateMeta, TemplateValues } from '@/lib/templates/types'
 import { DynamicForm, isComplete } from './DynamicForm'
 import { Preview } from './Preview'
@@ -11,7 +11,9 @@ import { useLocalStorage } from '@/lib/useLocalStorage'
 import { applyOverrides, hasOverrides, type OverridesByTemplate } from '@/lib/customize'
 import { getTemplate } from '@/lib/templates/registry'
 import { getLayout } from '@/lib/layouts/registry'
-import { deleteCustomTemplate, listCustomTemplates } from '@/lib/import/storage'
+import { deleteCustomTemplate, listCustomTemplates, saveCustomTemplate } from '@/lib/import/storage'
+import { buildBackup, restoreBackup } from '@/lib/backup'
+import { buildShareUrl, clearShareHash, readSharedTemplate } from '@/lib/share'
 
 /**
  * The whole client app. One values object is shared across templates, so
