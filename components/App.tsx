@@ -5,7 +5,10 @@ import type { LayoutComponent, TemplateMeta, TemplateValues } from '@/lib/templa
 import { DynamicForm, isComplete } from './DynamicForm'
 import { Preview } from './Preview'
 import { TemplatePicker } from './TemplatePicker'
+import { CustomizePanel } from './CustomizePanel'
+import { BulkPanel } from './BulkPanel'
 import { useLocalStorage } from '@/lib/useLocalStorage'
+import { applyOverrides, hasOverrides, type OverridesByTemplate } from '@/lib/customize'
 import { getTemplate } from '@/lib/templates/registry'
 import { getLayout } from '@/lib/layouts/registry'
 import { deleteCustomTemplate, listCustomTemplates } from '@/lib/import/storage'
@@ -22,6 +25,10 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
   const [customTemplates, setCustomTemplates] = useState<TemplateMeta[]>([])
   const [templateId, setTemplateId] = useLocalStorage('coverpage:template', templates[0]?.id ?? '')
   const [values, setValues] = useLocalStorage<TemplateValues>('coverpage:values', {})
+  const [overridesById, setOverridesById] = useLocalStorage<OverridesByTemplate>(
+    'coverpage:overrides',
+    {},
+  )
   const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -45,9 +52,26 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
     return layout ? { meta: custom, Component: layout.Component } : undefined
   }
   if (!resolved) return null
-  const { meta, Component } = resolved
+  const { meta: baseMeta, Component } = resolved
+
+  const overrides = overridesById[baseMeta.id] ?? {}
+  // Everything below — preview, print copy, single and bulk downloads — sees
+  // the same customized meta, so what you see is always what prints.
+  const meta = applyOverrides(baseMeta, overrides)
 
   const complete = isComplete(meta.fields, values)
+
+  function setOverrides(next: (typeof overridesById)[string]) {
+    setOverridesById({ ...overridesById, [baseMeta.id]: next })
+  }
+
+  // Overridden templates must travel inline: the registry copy on the server
+  // doesn't know about this browser's customizations.
+  function buildRequestBody(vals: TemplateValues): object {
+    return customIds.has(meta.id) || hasOverrides(overrides)
+      ? { meta, values: vals }
+      : { templateId: meta.id, values: vals }
+  }
 
   function removeCustom(id: string) {
     deleteCustomTemplate(id)
@@ -59,9 +83,7 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
     setDownloading(true)
     setError(null)
     try {
-      const body = customIds.has(meta.id)
-        ? { meta, values }
-        : { templateId: meta.id, values }
+      const body = buildRequestBody(values)
       const res = await fetch('/api/render', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -131,6 +153,9 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
               A4 sheet.
             </p>
           )}
+
+          <CustomizePanel brand={baseMeta.brand} overrides={overrides} onChange={setOverrides} />
+          <BulkPanel meta={meta} buildRequestBody={buildRequestBody} />
         </section>
 
         <section aria-label="Preview" className="min-w-0 lg:sticky lg:top-8">
