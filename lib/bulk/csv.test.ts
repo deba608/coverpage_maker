@@ -28,6 +28,17 @@ describe('parseCsv', () => {
     ])
   })
 
+  it('parses tab-separated paste via parseDelimited', () => {
+    expect(parseDelimited('a\tb\nc\td')).toEqual([
+      ['a', 'b'],
+      ['c', 'd'],
+    ])
+    expect(parseDelimited('a,b\nc,d')).toEqual([
+      ['a', 'b'],
+      ['c', 'd'],
+    ])
+  })
+
   it('skips fully empty rows', () => {
     expect(parseCsv('a,b\n\n , \nc,d')).toEqual([
       ['a', 'b'],
