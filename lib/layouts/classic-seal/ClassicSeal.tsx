@@ -35,6 +35,14 @@ export function ClassicSeal({ brand, fields, values }: LayoutProps) {
     )
   }
 
+  // SSR can't measure text, so long values step the font down by character
+  // count instead of overflowing their box. Thresholds tuned against Tinos at
+  // the details box's 95mm value column and the full-width title line.
+  const fit = (key: string | undefined, mid: number, long: number) => {
+    const len = (key ? values[key]?.trim() : '')?.length ?? 0
+    return len > long ? ' cs-fit-sm' : len > mid ? ' cs-fit-md' : ''
+  }
+
   return (
     <div
       className="cs-page"
@@ -60,8 +68,16 @@ export function ClassicSeal({ brand, fields, values }: LayoutProps) {
           {brand.logo && <img className="cs-logo" src={brand.logo} alt="" />}
         </div>
 
-        {title && <p className="cs-title">{show(title.key, `[${title.label}]`)}</p>}
-        {subtitle && <p className="cs-subtitle">{show(subtitle.key, `[${subtitle.label}]`)}</p>}
+        {title && (
+          <p className={`cs-title${fit(title.key, 26, 36)}`}>
+            {show(title.key, `[${title.label}]`)}
+          </p>
+        )}
+        {subtitle && (
+          <p className={`cs-subtitle${fit(subtitle.key, 26, 36)}`}>
+            {show(subtitle.key, `[${subtitle.label}]`)}
+          </p>
+        )}
 
         {details.length > 0 && (
           <div className="cs-details">
@@ -72,7 +88,9 @@ export function ClassicSeal({ brand, fields, values }: LayoutProps) {
                   <tr key={f.key}>
                     <td className="cs-details-label">{f.label}</td>
                     <td className="cs-details-colon">:</td>
-                    <td className="cs-details-value">{show(f.key, `[${f.label}]`)}</td>
+                    <td className={`cs-details-value${fit(f.key, 24, 34)}`}>
+                      {show(f.key, `[${f.label}]`)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

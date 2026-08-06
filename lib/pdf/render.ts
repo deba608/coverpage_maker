@@ -61,7 +61,7 @@ async function inlineLogo(logoPath: string | undefined): Promise<string | undefi
  */
 export async function buildHtml(
   template: ResolvedTemplate,
-  values: TemplateValues,
+  values: TemplateValues | TemplateValues[],
 ): Promise<string> {
   const { meta, Component } = template
 
@@ -69,9 +69,13 @@ export async function buildHtml(
   const css = cssPath ? await readFile(join(process.cwd(), cssPath), 'utf8') : ''
 
   const brand = { ...meta.brand, logo: await inlineLogo(meta.brand.logo) }
-  const body = renderToStaticMarkup(
-    Component({ brand, fields: meta.fields, values }),
-  )
+  // Several value sets → several .cs-page roots in one document. Each root is
+  // exactly 297mm tall, so Chromium paginates them 1:1 onto A4 pages — the
+  // "whole class in one PDF" path costs one render, not N.
+  const rows = Array.isArray(values) ? values : [values]
+  const body = rows
+    .map((v) => renderToStaticMarkup(Component({ brand, fields: meta.fields, values: v })))
+    .join('')
 
   return `<!doctype html>
 <html>

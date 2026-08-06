@@ -141,6 +141,25 @@
   white-space: nowrap;
 }
 
+/* Long-value auto-shrink. Character-count steps set by the component (SSR
+ * cannot measure text); td selectors match the type-selector specificity of
+ * .cs-details-table td above. */
+.cs-details-table td.cs-fit-md {
+  font-size: 17pt;
+}
+.cs-details-table td.cs-fit-sm {
+  font-size: 14pt;
+  white-space: normal;
+}
+.cs-title.cs-fit-md,
+.cs-subtitle.cs-fit-md {
+  font-size: 20pt;
+}
+.cs-title.cs-fit-sm,
+.cs-subtitle.cs-fit-sm {
+  font-size: 16pt;
+}
+
 /* Empty-state placeholders in the preview render grey; a generated PDF always
  * has values, so this never shows in output. */
 .cs-placeholder {

@@ -15,8 +15,11 @@ const bodySchema = z.object({
   // Imported templates live only in the sender's browser, so their definition
   // travels with the request instead of a registry id.
   meta: z.unknown().optional(),
-  values: z.record(z.string(), z.string()),
-})
+  values: z.record(z.string(), z.string()).optional(),
+  // Bulk "one merged PDF": one page per entry, in order. Capped so a hostile
+  // payload can't pin the lambda; 60 pages renders in a few seconds.
+  rows: z.array(z.record(z.string(), z.string())).min(1).max(60).optional(),
+}).refine((b) => b.values || b.rows, { message: 'values or rows is required' })
 
 /** POST { templateId | meta, values } → application/pdf */
 export async function POST(request: Request) {
@@ -24,7 +27,7 @@ export async function POST(request: Request) {
   if (!parsedBody.success) {
     return NextResponse.json({ error: 'Malformed request body' }, { status: 400 })
   }
-  const { templateId, meta, values } = parsedBody.data
+  const { templateId, meta, values, rows } = parsedBody.data
 
   let template: ResolvedTemplate | undefined
   if (templateId) {
@@ -47,20 +50,26 @@ export async function POST(request: Request) {
   }
 
   // Defence in depth: the UI disables download until required fields are
-  // filled, but the route never trusts the client.
-  const parsedValues = valuesSchemaFor(template.meta.fields).safeParse(values)
-  if (!parsedValues.success) {
-    const fields = [...new Set(parsedValues.error.issues.map((i) => String(i.path[0])))]
-    return NextResponse.json(
-      { error: `Invalid or missing fields: ${fields.join(', ')}` },
-      { status: 400 },
-    )
+  // filled, but the route never trusts the client. Every value set — the
+  // single one or each bulk row — passes the same validator.
+  const valuesSchema = valuesSchemaFor(template.meta.fields)
+  const sets: Record<string, string>[] = []
+  for (const [i, v] of (rows ?? [values!]).entries()) {
+    const parsed = valuesSchema.safeParse(v)
+    if (!parsed.success) {
+      const fields = [...new Set(parsed.error.issues.map((iss) => String(iss.path[0])))]
+      const where = rows ? `row ${i + 1}: ` : ''
+      return NextResponse.json(
+        { error: `Invalid or missing fields: ${where}${fields.join(', ')}` },
+        { status: 400 },
+      )
+    }
+    sets.push(parsed.data as Record<string, string>)
   }
-
-  const data = parsedValues.data as Record<string, string>
+  const data = sets[0]
 
   try {
-    const html = await buildHtml(template, data)
+    const html = await buildHtml(template, rows ? sets : data)
 
     const browser = await getBrowser()
     const page = await browser.newPage()
@@ -74,7 +83,9 @@ export async function POST(request: Request) {
       // printBackground keeps borders and fills; without it they silently vanish.
       const pdf = await page.pdf({ format: 'A4', printBackground: true })
 
-      const name = (data.name ?? 'coverpage').replace(/[^\w-]+/g, '_') || 'coverpage'
+      const name = rows
+        ? 'coverpages'
+        : (data.name ?? 'coverpage').replace(/[^\w-]+/g, '_') || 'coverpage'
       return new NextResponse(Buffer.from(pdf), {
         headers: {
           'Content-Type': 'application/pdf',

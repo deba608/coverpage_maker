@@ -1,83 +1,118 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import type { FieldDef, TemplateMeta } from '@/lib/templates/types'
-import { buildTemplateCsv, matchCsv, parseCsv, type BulkRow } from '@/lib/bulk/csv'
+import type { FieldDef, TemplateMeta, TemplateValues } from '@/lib/templates/types'
+import {
+  buildTemplateCsv,
+  matchCsv,
+  parseDelimited,
+  type BulkRow,
+  type MatchResult,
+} from '@/lib/bulk/csv'
 import { ZipWriter } from '@/lib/bulk/zip'
 
+/** The render route caps a merged request at this many pages. */
+const MERGE_LIMIT = 60
+
 /**
- * Whole-class mode: download a CSV with this template's columns, fill one row
- * per student, upload it back, get a ZIP of PDFs.
+ * Whole-class mode: get the rows in (CSV file or a straight paste from
+ * Excel/Sheets), validate them, and generate either a ZIP of per-student PDFs
+ * or one merged PDF in row order.
  *
- * Each PDF is rendered by the same /api/render call the single download uses —
- * one request per row, sequential, so the serverless route stays warm and the
- * progress count is honest. The ZIP is assembled in the browser.
+ * Fields the sheet doesn't have take the form's current value for every row —
+ * the form is where the class constants (Lab Name, Semester…) live, the sheet
+ * holds only what varies per student.
  */
 export function BulkPanel({
   meta,
-  buildRequestBody,
+  formValues,
+  buildRequestBase,
 }: {
   meta: TemplateMeta
-  buildRequestBody: (values: Record<string, string>) => object
+  formValues: TemplateValues
+  buildRequestBase: () => object
 }) {
   const [open, setOpen] = useState(false)
-  const [rows, setRows] = useState<BulkRow[] | null>(null)
-  const [missingColumns, setMissingColumns] = useState<string[]>([])
-  const [fileName, setFileName] = useState('')
+  const [matched, setMatched] = useState<MatchResult | null>(null)
+  const [sourceName, setSourceName] = useState('')
+  const [pasteOpen, setPasteOpen] = useState(false)
+  const [pasteText, setPasteText] = useState('')
+  const [output, setOutput] = useState<'zip' | 'merged'>('zip')
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const cancelled = useRef(false)
 
-  const valid = rows?.filter((r) => r.errors.length === 0) ?? []
-  const invalid = rows?.filter((r) => r.errors.length > 0) ?? []
+  const rows = matched?.rows ?? []
+  const valid = rows.filter((r) => r.errors.length === 0)
+  const invalid = rows.filter((r) => r.errors.length > 0)
   const generating = progress !== null
+  const mergedAllowed = valid.length <= MERGE_LIMIT
 
   function downloadTemplateCsv() {
     const blob = new Blob([buildTemplateCsv(meta.fields)], { type: 'text/csv' })
     triggerDownload(blob, `${meta.id}-class-list.csv`)
   }
 
+  function ingest(text: string, name: string) {
+    setError(null)
+    setSourceName(name)
+    setMatched(matchCsv(parseDelimited(text), meta.fields, formValues))
+  }
+
   async function uploadCsv(file: File | undefined) {
     if (!file) return
-    setError(null)
-    setFileName(file.name)
-    const matched = matchCsv(parseCsv(await file.text()), meta.fields)
-    setRows(matched.rows)
-    setMissingColumns(matched.missingColumns)
+    ingest(await file.text(), file.name)
     if (fileRef.current) fileRef.current.value = ''
   }
 
-  async function generateAll() {
+  async function generate() {
     if (valid.length === 0) return
     cancelled.current = false
     setError(null)
-    setProgress({ done: 0, total: valid.length })
-    const zip = new ZipWriter()
-    const used = new Set<string>()
-
     try {
-      for (let i = 0; i < valid.length; i++) {
-        if (cancelled.current) return
-        const row = valid[i]
-        const res = await fetch('/api/render', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(buildRequestBody(row.values)),
-        })
-        if (!res.ok) {
-          const msg = (await res.json().catch(() => null))?.error ?? `HTTP ${res.status}`
-          throw new Error(`Row ${row.index}: ${msg}`)
-        }
-        zip.add(pdfName(row, meta.fields, used), new Uint8Array(await res.arrayBuffer()))
-        setProgress({ done: i + 1, total: valid.length })
-      }
-      triggerDownload(zip.finish(), `${meta.id}-coverpages.zip`)
+      if (output === 'merged') await generateMerged()
+      else await generateZip()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Bulk generation failed')
     } finally {
       setProgress(null)
     }
+  }
+
+  async function generateMerged() {
+    setProgress({ done: 0, total: 1 })
+    const res = await fetch('/api/render', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...buildRequestBase(), rows: valid.map((r) => r.values) }),
+    })
+    if (!res.ok) {
+      throw new Error((await res.json().catch(() => null))?.error ?? `HTTP ${res.status}`)
+    }
+    triggerDownload(await res.blob(), `${meta.id}-coverpages.pdf`)
+  }
+
+  async function generateZip() {
+    setProgress({ done: 0, total: valid.length })
+    const zip = new ZipWriter()
+    const used = new Set<string>()
+    for (let i = 0; i < valid.length; i++) {
+      if (cancelled.current) return
+      const row = valid[i]
+      const res = await fetch('/api/render', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...buildRequestBase(), values: row.values }),
+      })
+      if (!res.ok) {
+        const msg = (await res.json().catch(() => null))?.error ?? `HTTP ${res.status}`
+        throw new Error(`Row ${row.index}: ${msg}`)
+      }
+      zip.add(pdfName(row, meta.fields, used), new Uint8Array(await res.arrayBuffer()))
+      setProgress({ done: i + 1, total: valid.length })
+    }
+    triggerDownload(zip.finish(), `${meta.id}-coverpages.zip`)
   }
 
   return (
@@ -99,13 +134,14 @@ export function BulkPanel({
       {open && (
         <div className="mt-4 space-y-4">
           <p className="text-xs">
-            Download the class list, fill one row per student in Excel or Sheets, upload it back.
-            You get a ZIP with one PDF per row.
+            Bring a class list — CSV file or paste straight from Excel/Sheets. Columns the sheet
+            doesn&apos;t have (Lab Name, Semester…) are taken from the form above for every
+            student.
           </p>
 
           <div className="flex flex-wrap gap-2">
             <button type="button" className="btn-ghost" onClick={downloadTemplateCsv}>
-              1 · Download class list (CSV)
+              Download blank list (CSV)
             </button>
             <button
               type="button"
@@ -113,7 +149,15 @@ export function BulkPanel({
               onClick={() => fileRef.current?.click()}
               disabled={generating}
             >
-              2 · Upload filled list
+              Upload CSV
+            </button>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => setPasteOpen(!pasteOpen)}
+              disabled={generating}
+            >
+              Paste from Excel
             </button>
             <input
               ref={fileRef}
@@ -124,19 +168,46 @@ export function BulkPanel({
             />
           </div>
 
-          {rows && (
+          {pasteOpen && (
+            <div className="space-y-2">
+              <textarea
+                className="field-input h-24 font-mono text-xs"
+                placeholder={'Copy the cells (with the header row) in Excel/Sheets, paste here.'}
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn-ghost"
+                disabled={pasteText.trim() === ''}
+                onClick={() => ingest(pasteText, 'pasted rows')}
+              >
+                Use pasted rows
+              </button>
+            </div>
+          )}
+
+          {matched && (
             <div className="space-y-2">
               <p className="text-xs">
-                <span className="font-semibold text-ink">{fileName}</span> — {valid.length} ready
+                <span className="font-semibold text-ink">{sourceName}</span> — {valid.length}{' '}
+                ready
                 {invalid.length > 0 && (
                   <span className="text-margin">, {invalid.length} with problems (skipped)</span>
                 )}
               </p>
 
-              {missingColumns.length > 0 && (
+              {matched.fromForm.length > 0 && (
+                <p className="text-xs">
+                  <span className="font-semibold text-ink">From the form for all rows:</span>{' '}
+                  {matched.fromForm.join(', ')}
+                </p>
+              )}
+
+              {matched.missingColumns.length > 0 && (
                 <p className="text-xs text-margin">
-                  Missing required columns: {missingColumns.join(', ')}. Use the downloaded CSV as
-                  the starting point.
+                  {matched.missingColumns.join(', ')}: no column in the sheet and nothing in the
+                  form. Add the column, or fill those fields in the form above.
                 </p>
               )}
 
@@ -150,17 +221,46 @@ export function BulkPanel({
                 </ul>
               )}
 
+              <fieldset className="flex gap-4 text-xs">
+                <legend className="sr-only">Output format</legend>
+                <label className="flex items-center gap-1.5">
+                  <input
+                    type="radio"
+                    name="bulk-output"
+                    checked={output === 'zip'}
+                    onChange={() => setOutput('zip')}
+                  />
+                  One PDF each (ZIP)
+                </label>
+                <label
+                  className={`flex items-center gap-1.5 ${mergedAllowed ? '' : 'opacity-40'}`}
+                >
+                  <input
+                    type="radio"
+                    name="bulk-output"
+                    checked={output === 'merged'}
+                    onChange={() => setOutput('merged')}
+                    disabled={!mergedAllowed}
+                  />
+                  One merged PDF{mergedAllowed ? '' : ` (max ${MERGE_LIMIT} rows)`}
+                </label>
+              </fieldset>
+
               <button
                 type="button"
                 className="btn-ink w-full"
-                onClick={generateAll}
+                onClick={generate}
                 disabled={valid.length === 0 || generating}
               >
                 {generating
-                  ? `Making PDF ${progress!.done + 1} of ${progress!.total}…`
-                  : `3 · Generate ${valid.length} PDF${valid.length === 1 ? '' : 's'} (ZIP)`}
+                  ? output === 'merged'
+                    ? 'Making the merged PDF…'
+                    : `Making PDF ${progress!.done + 1} of ${progress!.total}…`
+                  : output === 'merged'
+                    ? `Generate 1 PDF with ${valid.length} page${valid.length === 1 ? '' : 's'}`
+                    : `Generate ${valid.length} PDF${valid.length === 1 ? '' : 's'} (ZIP)`}
               </button>
-              {generating && (
+              {generating && output === 'zip' && (
                 <button
                   type="button"
                   className="btn-ghost w-full"
