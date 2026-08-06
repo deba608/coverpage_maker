@@ -8,6 +8,15 @@
  * as CSS custom properties set on .cs-page by the component.
  */
 
+/* The page must be immune to app-chrome globals (heading colors/faces): what
+ * the preview shows has to be exactly what Chromium prints. */
+.cs-page h1,
+.cs-page h2,
+.cs-page p {
+  color: inherit;
+  font-family: inherit;
+}
+
 .cs-page {
   width: 210mm;
   height: 297mm;
