@@ -14,6 +14,8 @@ export interface BrandOverrides {
   accentColor?: string
   logoWidthMm?: number
   logo?: string
+  /** Distance from page edge to outer border line in mm (2–25). Default 7. */
+  borderInsetMm?: number
 }
 
 /** localStorage record: templateId → that template's overrides. */
@@ -32,6 +34,7 @@ export function applyOverrides(meta: TemplateMeta, o: BrandOverrides | undefined
   if (o!.accentColor) brand.accentColor = o!.accentColor
   if (o!.logoWidthMm) brand.logoWidthMm = o!.logoWidthMm
   if (o!.logo) brand.logo = o!.logo
+  if (o!.borderInsetMm !== undefined) brand.borderInsetMm = o!.borderInsetMm
   return { ...meta, brand }
 }
 

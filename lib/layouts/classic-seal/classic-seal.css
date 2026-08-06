@@ -29,10 +29,11 @@
   overflow: hidden;
 }
 
-/* Border treatments. Reference uses a single thick rounded frame. */
+/* Border treatments. Reference uses a single thick rounded frame.
+ * --cs-border-inset: distance from page edge to outer border line (default 7mm). */
 .cs-border {
   position: absolute;
-  inset: 7mm;
+  inset: var(--cs-border-inset, 7mm);
   border-radius: 4mm;
   pointer-events: none;
 }

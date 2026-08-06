@@ -53,6 +53,8 @@ export interface BrandConfig {
   border: 'double' | 'single' | 'none'
   /** Hex colour for rules and headings. Default #000. */
   accentColor?: string
+  /** Distance in mm from page edge to the outer border line. Default 7. */
+  borderInsetMm?: number
 }
 
 /**

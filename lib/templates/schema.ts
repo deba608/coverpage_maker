@@ -52,6 +52,7 @@ export const brandConfigSchema = z.object({
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/, 'accentColor must be a 6-digit hex colour')
     .optional(),
+  borderInsetMm: z.number().min(2).max(25).optional(),
 })
 
 export const layoutIdSchema = z.enum(['classic-seal', 'custom'])

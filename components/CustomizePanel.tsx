@@ -58,6 +58,7 @@ export function CustomizePanel({
     accentColor: overrides.accentColor ?? brand.accentColor ?? '#000000',
     logoWidthMm: overrides.logoWidthMm ?? brand.logoWidthMm ?? 55,
     logo: overrides.logo ?? brand.logo,
+    borderInsetMm: overrides.borderInsetMm ?? brand.borderInsetMm ?? 7,
   }
 
   return (
@@ -131,6 +132,22 @@ export function CustomizePanel({
               step={1}
               value={effective.logoWidthMm}
               onChange={(e) => set('logoWidthMm', Number(e.target.value))}
+              className="w-full accent-[var(--ink)]"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 flex justify-between text-xs font-medium text-ink">
+              <span>Border margin (from page edge)</span>
+              <span className="tabular-nums text-pencil">{effective.borderInsetMm}mm</span>
+            </span>
+            <input
+              type="range"
+              min={2}
+              max={20}
+              step={1}
+              value={effective.borderInsetMm}
+              onChange={(e) => set('borderInsetMm', Number(e.target.value))}
               className="w-full accent-[var(--ink)]"
             />
           </label>
