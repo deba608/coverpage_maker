@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
       "./lib/layouts/**/*.css",
       "./public/templates/**",
       "./public/fonts/**",
+      // The Chromium binary itself: loaded with fs reads at runtime, so the
+      // tracer cannot see it even with the package externalized.
+      "./node_modules/@sparticuz/chromium/bin/**",
     ],
   },
 };
