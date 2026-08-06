@@ -21,6 +21,29 @@ const LAYOUT_CSS: Record<string, string> = {
   'classic-seal': 'lib/layouts/classic-seal/classic-seal.css',
 }
 
+/**
+ * Self-hosted fonts, embedded as data URIs so the PDF's Chromium shapes text
+ * with exactly the glyphs the preview used. The lambda has no MS fonts; without
+ * this, 'Times New Roman' silently falls back and the geometry drifts.
+ */
+async function fontFaces(): Promise<string> {
+  const faces = [
+    { file: 'tinos-latin-400-normal.woff2', weight: 400 },
+    { file: 'tinos-latin-700-normal.woff2', weight: 700 },
+  ]
+  const rules = await Promise.all(
+    faces.map(async ({ file, weight }) => {
+      const data = await readFile(join(process.cwd(), 'public', 'fonts', file))
+      return `@font-face {
+  font-family: 'Tinos';
+  src: url(data:font/woff2;base64,${data.toString('base64')}) format('woff2');
+  font-weight: ${weight};
+}`
+    }),
+  )
+  return rules.join('\n')
+}
+
 /** Logos are inlined as data URIs so Chromium never makes a network request. */
 async function inlineLogo(logoPath: string | undefined): Promise<string | undefined> {
   if (!logoPath) return undefined
@@ -55,6 +78,7 @@ export async function buildHtml(
 <style>
   * { margin: 0; }
   @page { size: A4; margin: 0; }
+  ${await fontFaces()}
   ${css}
 </style>
 </head>

@@ -24,3 +24,48 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+ * Tinos: metric-compatible with Times New Roman, self-hosted so the preview
+ * uses the same glyphs the PDF route embeds — Vercel's lambda has no MS fonts,
+ * and a font fallback there would silently change the page geometry.
+ */
+@font-face {
+  font-family: 'Tinos';
+  src: url('/fonts/tinos-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Tinos';
+  src: url('/fonts/tinos-latin-700-normal.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+/*
+ * Print fallback: if /api/render ever fails, Ctrl+P on the app must produce
+ * the same page. Everything but the print copy of the coverpage is hidden;
+ * the copy itself is unscaled at the page origin.
+ */
+.print-only {
+  display: none;
+}
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-only {
+    display: block;
+    visibility: visible;
+    position: absolute;
+    inset: 0 auto auto 0;
+  }
+  .print-only * {
+    visibility: visible;
+  }
+}
+@page {
+  size: A4;
+  margin: 0;
+}

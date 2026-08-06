@@ -48,6 +48,9 @@ export async function POST(request: Request) {
       // 'load' is enough: the document is self-contained (inline CSS, data-URI
       // images), so there is no network activity to go idle.
       await page.setContent(html, { waitUntil: 'load' })
+      // Data-URI fonts still decode asynchronously; print before this resolves
+      // and text falls back to a default serif.
+      await page.evaluateHandle('document.fonts.ready')
       // printBackground keeps borders and fills; without it they silently vanish.
       const pdf = await page.pdf({ format: 'A4', printBackground: true })
 

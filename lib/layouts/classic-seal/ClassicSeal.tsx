@@ -4,11 +4,14 @@ import type { LayoutProps } from '@/lib/templates/types'
 import { fieldsInSlot } from '@/lib/templates/types'
 import './classic-seal.css'
 
+// Tinos leads the serif stacks: it is metric-compatible with Times New Roman
+// and self-hosted, so dev machines, the preview, and the Vercel lambda (which
+// has no MS fonts at all) all shape text identically.
 const FONT_STACKS: Record<string, string> = {
-  times: "'Times New Roman', Times, serif",
-  serif: 'Georgia, "Times New Roman", serif',
+  times: "'Tinos', 'Times New Roman', Times, serif",
+  serif: "'Tinos', Georgia, 'Times New Roman', serif",
   sans: 'Arial, Helvetica, sans-serif',
-  garamond: 'Garamond, "EB Garamond", "Times New Roman", serif',
+  garamond: "Garamond, 'EB Garamond', 'Tinos', serif",
 }
 
 /**

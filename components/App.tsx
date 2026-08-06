@@ -92,6 +92,11 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
           </Preview>
         </section>
       </div>
+
+      {/* Unscaled copy used only by Ctrl+P — the fallback when /api/render fails. */}
+      <div className="print-only" aria-hidden>
+        <Component brand={meta.brand} fields={meta.fields} values={values} />
+      </div>
     </div>
   )
 }
