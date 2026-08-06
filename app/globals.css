@@ -25,12 +25,12 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ink: #3a4a9f;
-    --paper: #0e1220;
-    --sheet: #14192d;
-    --rule: #303f6d;
-    --margin: #ea6b63;
-    --pencil: #b8bed9;
+    --ink: #4a5fb9;
+    --paper: #111116;
+    --sheet: #1b1c24;
+    --rule: #3a3f5a;
+    --margin: #ff6b6b;
+    --pencil: #a8aebf;
   }
 }
 
