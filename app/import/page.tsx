@@ -7,10 +7,10 @@ export default function ImportPage() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
       <header className="mb-8">
-        <Link href="/" className="btn-ghost mb-4 inline-flex items-center gap-1">
+        <Link href="/" className="btn-ghost mb-3 inline-flex items-center gap-1 text-sm">
           ← Back to templates
         </Link>
-        <div className="name-slip mt-3">
+        <div className="name-slip">
           <h1 className="text-xl leading-tight sm:text-2xl">Import your college&apos;s coverpage</h1>
         </div>
         <p className="mt-2 max-w-xl text-sm">
