@@ -69,6 +69,33 @@ const bad = await page.evaluate(async () => {
 })
 console.log(`missing-required status: ${bad} ${bad === 400 ? 'OK' : 'FAIL'}`)
 
+// Inline meta (the path imported templates use) → also a PDF.
+const inline = await page.evaluate(async () => {
+  const metaJson = {
+    id: 'custom-test',
+    name: 'Custom Test',
+    description: 'inline meta e2e',
+    thumbnail: '/window.svg',
+    layout: 'classic-seal',
+    brand: { institution: ['TEST COLLEGE'], font: 'times', border: 'double' },
+    fields: [
+      { key: 'name', label: 'Name', slot: 'details', type: 'text', required: true, maxLength: 40 },
+    ],
+  }
+  const r = await fetch('/api/render', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ meta: metaJson, values: { name: 'INLINE META' } }),
+  })
+  const buf = new Uint8Array(await r.arrayBuffer())
+  return { status: r.status, magic: String.fromCharCode(...buf.slice(0, 5)) }
+})
+console.log(
+  `inline-meta: ${inline.status} ${inline.magic} ${
+    inline.status === 200 && inline.magic.startsWith('%PDF') ? 'OK' : 'FAIL'
+  }`,
+)
+
 const unknown = await page.evaluate(async () => {
   const r = await fetch('/api/render', {
     method: 'POST',
