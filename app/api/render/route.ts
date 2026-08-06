@@ -8,7 +8,7 @@ import { buildHtml } from '@/lib/pdf/render'
 import { getBrowser } from '@/lib/pdf/browser'
 
 export const runtime = 'nodejs'
-export const maxDuration = 30
+export const maxDuration = 60
 
 const bodySchema = z.object({
   templateId: z.string().optional(),
@@ -18,7 +18,7 @@ const bodySchema = z.object({
   values: z.record(z.string(), z.string()).optional(),
   // Bulk "one merged PDF": one page per entry, in order. Capped so a hostile
   // payload can't pin the lambda; 60 pages renders in a few seconds.
-  rows: z.array(z.record(z.string(), z.string())).min(1).max(60).optional(),
+  rows: z.array(z.record(z.string(), z.string())).min(1).max(200).optional(),
 }).refine((b) => b.values || b.rows, { message: 'values or rows is required' })
 
 /** POST { templateId | meta, values } → application/pdf */

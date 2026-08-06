@@ -9,10 +9,11 @@ import {
   type BulkRow,
   type MatchResult,
 } from '@/lib/bulk/csv'
+import { readClassList } from '@/lib/bulk/fileReader'
 import { ZipWriter } from '@/lib/bulk/zip'
 
-/** The render route caps a merged request at this many pages. */
-const MERGE_LIMIT = 60
+/** Render route cap for merged PDF pages. */
+const MERGE_LIMIT = 200
 
 /**
  * Whole-class mode: get the rows in (CSV file or a straight paste from
@@ -54,16 +55,22 @@ export function BulkPanel({
     triggerDownload(blob, `${meta.id}-class-list.csv`)
   }
 
-  function ingest(text: string, name: string) {
-    setError(null)
+  function ingest(rows: string[][], name: string) {
     setSourceName(name)
-    setMatched(matchCsv(parseDelimited(text), meta.fields, formValues))
+    setMatched(matchCsv(rows, meta.fields, formValues))
   }
 
-  async function uploadCsv(file: File | undefined) {
+  async function uploadFile(file: File | undefined) {
     if (!file) return
-    ingest(await file.text(), file.name)
-    if (fileRef.current) fileRef.current.value = ''
+    setError(null)
+    try {
+      const rows = await readClassList(file)
+      ingest(rows, file.name)
+    } catch {
+      setError('Could not read that file. Try saving it as CSV from Excel first.')
+    } finally {
+      if (fileRef.current) fileRef.current.value = ''
+    }
   }
 
   async function generate() {
@@ -162,9 +169,9 @@ export function BulkPanel({
             <input
               ref={fileRef}
               type="file"
-              accept=".csv,text/csv"
+              accept=".csv,.xlsx,.xls,text/csv"
               className="hidden"
-              onChange={(e) => uploadCsv(e.target.files?.[0])}
+              onChange={(e) => uploadFile(e.target.files?.[0])}
             />
           </div>
 
@@ -180,7 +187,7 @@ export function BulkPanel({
                 type="button"
                 className="btn-ghost"
                 disabled={pasteText.trim() === ''}
-                onClick={() => ingest(pasteText, 'pasted rows')}
+                onClick={() => ingest(parseDelimited(pasteText), 'pasted rows')}
               >
                 Use pasted rows
               </button>
