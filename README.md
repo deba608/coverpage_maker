@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Coverpage Maker
 
-## Getting Started
+Generate print-ready A4 coverpage PDFs for lab reports and assignments. Pick a
+template, fill the form, watch the live preview, download the PDF.
 
-First, run the development server:
+**Design principle:** layouts are code, templates are data. A layout (React
+component) is written once; every template on it is a `template.json` plus a
+logo — no CSS, no code. See [docs/adding-a-template.md](docs/adding-a-template.md).
+
+## Stack
+
+Next.js 16 (App Router) · TypeScript · Tailwind (app shell only) · zod ·
+Puppeteer + `@sparticuz/chromium` for the PDF route. Preview and PDF render the
+same layout component, so they cannot drift apart.
+
+## Develop
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # app on :3000
+npm test             # schema + layout tests
+npm run test:e2e     # drives the real form, asserts %PDF bytes (dev server running)
+npm run test:visual  # pixel-diff every template against tests/visual/ baselines
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`/dev/preview?template=<id>` renders any template at true size with sample values.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+lib/layouts/      layout components (classic-seal, …)
+lib/templates/    one folder per template: template.json (+ registry entry)
+lib/pdf/          Chromium wrapper + HTML builder for the render route
+components/       picker, dynamic form, scaled preview
+app/api/render/   POST { templateId, values } → application/pdf
+scripts/          PDF inspection, logo extraction, thumbnails, checks
+docs/             design spec, plan, template authoring guide
+```
