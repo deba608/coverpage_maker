@@ -7,7 +7,7 @@ export default function ImportPage() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
       <header className="mb-8">
-        <Link href="/" className="text-sm text-pencil underline-offset-2 hover:underline">
+        <Link href="/" className="btn-ghost mb-4 inline-flex items-center gap-1">
           ← Back to templates
         </Link>
         <div className="name-slip mt-3">
