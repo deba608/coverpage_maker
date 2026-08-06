@@ -81,3 +81,5 @@ CLAUDE.md
 *.tsbuildinfo
 next-env.d.ts
 
+
+.vercel
