@@ -23,6 +23,17 @@
   --pencil: #4a5165;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #3a4a9f;
+    --paper: #0e1220;
+    --sheet: #14192d;
+    --rule: #303f6d;
+    --margin: #ea6b63;
+    --pencil: #b8bed9;
+  }
+}
+
 @theme inline {
   --color-ink: var(--ink);
   --color-paper: var(--paper);
@@ -104,6 +115,11 @@ h1, h2, h3 {
   border-color: var(--ink);
   box-shadow: 0 1px 0 0 var(--ink);
 }
+.field-input:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink) 25%, transparent);
+}
 .field-input::placeholder {
   color: color-mix(in srgb, var(--pencil) 45%, transparent);
 }
@@ -150,7 +166,16 @@ h1, h2, h3 {
 .btn-ghost:hover {
   border-color: var(--ink);
 }
+.btn-ghost:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
 
+/* TemplatePicker thumbnail button focus. */
+.template-thumb:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
 @media (prefers-reduced-motion: reduce) {
   .btn-ink, .btn-ink:hover, .btn-ink:active {
     transition: none;
@@ -162,6 +187,14 @@ h1, h2, h3 {
 :focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
+  outline-offset: max(2px, 1px); /* min gap in px, grows if element has border */
+}
+
+/* select buttons and number spinners get the notebook treatment too. */
+.field-input::-webkit-inner-spin-button,
+.field-input::-webkit-inner-spin-button,
+select.field-input::-webkit-inner-spin-button {
+  opacity: 0.4;
 }
 
 /*

@@ -29,7 +29,7 @@ export function Preview({ children }: { children: React.ReactNode }) {
     <div ref={containerRef} className="w-full">
       <div
         style={{ height: A4_HEIGHT_PX * scale }}
-        className="overflow-hidden rounded-sm shadow-lg"
+        className="overflow-hidden rounded-[2px] border border-rule bg-sheet shadow-[2px_2px_0_rgba(28,43,107,0.12)]"
       >
         <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
           {children}
