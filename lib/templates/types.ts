@@ -1,20 +1,31 @@
+import type { ReactElement } from 'react'
+
 /**
  * The contract every coverpage template must satisfy.
  *
- * A template is two things: a `TemplateMeta` describing the inputs it needs
- * (which drives the form UI), and a React component that turns those inputs
- * into an A4 page. Adding a template means adding those two files and one
- * registry line — never editing the form, the preview, or the render route.
+ * A template is *data*, not code: a JSON file naming a layout, its branding, and
+ * the fields it collects. A layout is the React component that turns those into
+ * an A4 page, written once and reused by many templates.
+ *
+ * Adding a template therefore means adding one JSON file (and a logo) — never
+ * editing the form, the preview, the layout, or the render route.
  */
 
 export type FieldType = 'text' | 'select' | 'number' | 'date'
 
+/**
+ * Where a field renders on the page. Layouts declare which slots they support;
+ * the schema test rejects a template that uses one its layout does not.
+ */
+export type SlotId = 'title' | 'subtitle' | 'details'
+
 export interface FieldDef {
   /** Key in the values object. Unique within a template. */
   key: string
-  /** Shown as the input's label. */
+  /** Input label, and — for `details` fields — the text left of the colon on the page. */
   label: string
   type: FieldType
+  slot: SlotId
   required?: boolean
   /** Required when `type` is 'select'. */
   options?: string[]
@@ -23,17 +34,63 @@ export interface FieldDef {
   maxLength?: number
 }
 
+/**
+ * The knobs a layout exposes to its templates.
+ *
+ * Deliberately small. A layout is allowed to be opinionated — if a template
+ * needs a knob that isn't here, that is evidence it wants a different layout,
+ * not a bigger config.
+ */
+export interface BrandConfig {
+  /** 1–3 heading lines, rendered largest-first. */
+  institution: string[]
+  address?: string
+  /** Path under /public, e.g. /templates/sambalpur-lab/seal.png */
+  logo?: string
+  /** Rendered logo width in millimetres. Default 55. */
+  logoWidthMm?: number
+  font: 'serif' | 'sans' | 'times' | 'garamond'
+  border: 'double' | 'single' | 'none'
+  /** Hex colour for rules and headings. Default #000. */
+  accentColor?: string
+}
+
+/**
+ * `custom` means the template ships its own component instead of using a shared
+ * layout. An escape hatch so one unusual design can never block the project —
+ * reaching for it twice on similar pages means a new shared layout is the right
+ * answer instead.
+ */
+export type LayoutId = 'classic-seal' | 'custom'
+
 export interface TemplateMeta {
   id: string
   name: string
   description: string
   /** Path under /public, e.g. /templates/sambalpur-lab/thumb.png */
   thumbnail: string
+  layout: LayoutId
+  brand: BrandConfig
   fields: FieldDef[]
 }
 
 /** Form state: every field's current value, keyed by `FieldDef.key`. */
 export type TemplateValues = Record<string, string>
 
-/** A template component is a pure function of its values — no hooks, no browser APIs. */
-export type TemplateComponent = (props: { values: TemplateValues }) => React.ReactElement
+export interface LayoutProps {
+  brand: BrandConfig
+  fields: readonly FieldDef[]
+  values: TemplateValues
+}
+
+/**
+ * A layout is a pure function of its props: no hooks, no browser APIs (it must
+ * render on the server), no network requests. It renders exactly one
+ * 210mm x 297mm root element.
+ */
+export type LayoutComponent = (props: LayoutProps) => ReactElement
+
+/** Convenience: the fields assigned to one slot, in declaration order. */
+export function fieldsInSlot(fields: readonly FieldDef[], slot: SlotId): FieldDef[] {
+  return fields.filter((f) => f.slot === slot)
+}

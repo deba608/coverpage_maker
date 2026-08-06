@@ -12,6 +12,6 @@ export default defineConfig({
     exclude: ['node_modules/**', '.next/**', 'e2e/**'],
   },
   resolve: {
-    alias: { '@': resolve(__dirname, '.') },
+    alias: { '@': resolve(import.meta.dirname, '.') },
   },
 })
