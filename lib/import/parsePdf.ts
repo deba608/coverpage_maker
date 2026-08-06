@@ -38,7 +38,10 @@ export async function parsePdf(file: File): Promise<ParsedPdf> {
 
   const content = await page.getTextContent()
   const items: TextItem[] = content.items
-    .filter((i): i is { str: string; transform: number[]; width: number } => 'str' in i && (i as { str: string }).str.trim() !== '')
+    .filter(
+      (i): i is import('pdfjs-dist/types/src/display/api').TextItem =>
+        'str' in i && i.str.trim() !== '',
+    )
     .map((i) => {
       const [a, , , d, x, y] = i.transform
       return {
