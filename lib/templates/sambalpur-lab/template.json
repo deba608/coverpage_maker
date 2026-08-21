@@ -69,7 +69,7 @@
       "slot": "details",
       "label": "Branch",
       "type": "select",
-      "options": ["CSE", "IT", "ECE", "EE", "ME", "CE"]
+      "options": ["CSE", "CSE (AIML)", "CSE (ICS)", "IT", "ECE", "EE", "ME", "CE"]
     }
   ]
 }
