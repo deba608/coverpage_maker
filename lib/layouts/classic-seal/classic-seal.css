@@ -33,16 +33,19 @@
  * --cs-border-inset: distance from page edge to outer border line (default 7mm). */
 .cs-border {
   position: absolute;
-  inset: var(--cs-border-inset, 7mm);
+  inset: var(--cs-border-inset, 12mm);
   border-radius: 4mm;
   pointer-events: none;
 }
+
 .cs-page[data-border='single'] .cs-border {
   border: 1.2mm solid var(--cs-accent, #000);
 }
+
 .cs-page[data-border='double'] .cs-border {
   border: 1.2mm solid var(--cs-accent, #000);
 }
+
 .cs-page[data-border='double'] .cs-border::after {
   content: '';
   position: absolute;
@@ -50,6 +53,7 @@
   border: 0.4mm solid var(--cs-accent, #000);
   border-radius: 2.8mm;
 }
+
 .cs-page[data-border='none'] .cs-border {
   display: none;
 }
@@ -88,6 +92,7 @@
   justify-content: center;
   margin: 4mm 0;
 }
+
 .cs-logo {
   width: var(--cs-logo-width, 55mm);
   max-height: 100%;
@@ -99,6 +104,7 @@
   font-weight: 700;
   margin: 0;
 }
+
 .cs-subtitle {
   font-size: 24pt;
   font-weight: 700;
@@ -117,25 +123,31 @@
   text-align: left;
   font-size: 20pt;
 }
+
 .cs-details-heading {
   margin: 0 0 1mm;
 }
+
 .cs-details-table {
   border-collapse: collapse;
 }
+
 .cs-details-table td {
   padding: 0.8mm 0;
   vertical-align: top;
 }
+
 /* td type selector above outranks a lone class — match it. */
 .cs-details-table td.cs-details-label {
   min-width: 33mm;
   white-space: nowrap;
   padding-right: 3mm;
 }
+
 .cs-details-table td.cs-details-colon {
   padding-right: 4mm;
 }
+
 .cs-details-table td.cs-details-value {
   max-width: 95mm;
   overflow: hidden;
@@ -148,14 +160,17 @@
 .cs-details-table td.cs-fit-md {
   font-size: 17pt;
 }
+
 .cs-details-table td.cs-fit-sm {
   font-size: 14pt;
   white-space: normal;
 }
+
 .cs-title.cs-fit-md,
 .cs-subtitle.cs-fit-md {
   font-size: 20pt;
 }
+
 .cs-title.cs-fit-sm,
 .cs-subtitle.cs-fit-sm {
   font-size: 16pt;
