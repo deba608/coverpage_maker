@@ -216,26 +216,32 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
           <h2 className="mb-4 text-base">Your details</h2>
           <DynamicForm fields={meta.fields} values={values} onChange={setValues} />
 
-          <button type="button" onClick={download} disabled={!complete || downloading}
-            className="btn-ink mt-6 w-full">
-            {downloading ? 'Preparing your PDF…' : 'Download PDF'}
-          </button>
-
-          {!complete && (
-            <p className="mt-2 text-xs">
-              Fields marked <span className="font-semibold text-margin">*</span> are needed for the
-              download.
-            </p>
-          )}
-          {error && (
-            <p className="mt-2 text-xs text-margin">
-              {error} You can also print this page with Ctrl+P — the preview prints as the full
-              A4 sheet.
-            </p>
-          )}
-
           <CustomizePanel brand={baseMeta.brand} overrides={overrides} onChange={setOverrides} />
           <BulkPanel meta={meta} formValues={values} buildRequestBase={buildRequestBase} />
+
+          <div className="mt-8 border-t border-rule pt-6">
+            <button
+              type="button"
+              onClick={download}
+              disabled={!complete || downloading}
+              className="btn-ink w-full"
+            >
+              {downloading ? 'Preparing your PDF…' : 'Download PDF'}
+            </button>
+
+            {!complete && (
+              <p className="mt-2 text-xs">
+                Fields marked <span className="font-semibold text-margin">*</span> are needed for the
+                download.
+              </p>
+            )}
+            {error && (
+              <p className="mt-2 text-xs text-margin">
+                {error} You can also print this page with Ctrl+P — the preview prints as the full
+                A4 sheet.
+              </p>
+            )}
+          </div>
         </section>
 
         <section aria-label="Preview" className="min-w-0 lg:sticky lg:top-8">
