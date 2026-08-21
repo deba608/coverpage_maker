@@ -58,7 +58,7 @@ export function CustomizePanel({
     accentColor: overrides.accentColor ?? brand.accentColor ?? '#000000',
     logoWidthMm: overrides.logoWidthMm ?? brand.logoWidthMm ?? 55,
     logo: overrides.logo ?? brand.logo,
-    borderInsetMm: overrides.borderInsetMm ?? brand.borderInsetMm ?? 12,
+    borderInsetMm: overrides.borderInsetMm ?? brand.borderInsetMm ?? 14,
   }
 
   return (

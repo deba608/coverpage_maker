@@ -52,7 +52,7 @@ export function ClassicSeal({ brand, fields, values }: LayoutProps) {
           '--cs-font': FONT_STACKS[brand.font] ?? FONT_STACKS.times,
           '--cs-accent': brand.accentColor ?? '#000',
           '--cs-logo-width': `${brand.logoWidthMm ?? 55}mm`,
-          '--cs-border-inset': `${brand.borderInsetMm ?? 12}mm`,
+          '--cs-border-inset': `${brand.borderInsetMm ?? 14}mm`,
         } as React.CSSProperties
       }
     >
