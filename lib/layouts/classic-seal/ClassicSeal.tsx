@@ -89,7 +89,7 @@ export function ClassicSeal({ brand, fields, values }: LayoutProps) {
                   <tr key={f.key}>
                     <td className="cs-details-label">{f.label}</td>
                     <td className="cs-details-colon">:</td>
-                    <td className={`cs-details-value${fit(f.key, 24, 34)}`}>
+                    <td className={`cs-details-value${fit(f.key, 18, 26)}`}>
                       {show(f.key, `[${f.label}]`)}
                     </td>
                   </tr>

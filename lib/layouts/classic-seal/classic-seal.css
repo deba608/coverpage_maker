@@ -151,7 +151,8 @@
 .cs-details-table td.cs-details-value {
   max-width: 95mm;
   overflow: hidden;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
 }
 
 /* Long-value auto-shrink. Character-count steps set by the component (SSR
