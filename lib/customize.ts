@@ -13,6 +13,8 @@ export interface BrandOverrides {
   font?: BrandConfig['font']
   accentColor?: string
   logoWidthMm?: number
+  logoAlign?: BrandConfig['logoAlign']
+  logoOffsetYMm?: number
   logo?: string
   /** Distance from page edge to outer border line in mm (2–40). Default 14. */
   borderInsetMm?: number
@@ -36,7 +38,9 @@ export function applyOverrides(meta: TemplateMeta, o: BrandOverrides | undefined
   if (o!.border) brand.border = o!.border
   if (o!.font) brand.font = o!.font
   if (o!.accentColor) brand.accentColor = o!.accentColor
-  if (o!.logoWidthMm) brand.logoWidthMm = o!.logoWidthMm
+  if (o!.logoWidthMm !== undefined) brand.logoWidthMm = o!.logoWidthMm
+  if (o!.logoAlign !== undefined) brand.logoAlign = o!.logoAlign
+  if (o!.logoOffsetYMm !== undefined) brand.logoOffsetYMm = o!.logoOffsetYMm
   if (o!.logo) brand.logo = o!.logo
   if (o!.borderInsetMm !== undefined) brand.borderInsetMm = o!.borderInsetMm
   if (o!.institutionSizePt !== undefined) brand.institutionSizePt = o!.institutionSizePt

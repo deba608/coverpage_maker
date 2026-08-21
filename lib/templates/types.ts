@@ -49,11 +49,15 @@ export interface BrandConfig {
   logo?: string
   /** Rendered logo width in millimetres. Default 55. */
   logoWidthMm?: number
+  /** Horizontal alignment of the logo: 'left' | 'center' | 'right'. Default 'center'. */
+  logoAlign?: 'left' | 'center' | 'right'
+  /** Vertical position offset in millimetres (-40 to 40). Default 0. */
+  logoOffsetYMm?: number
   font: 'serif' | 'sans' | 'times' | 'garamond'
   border: 'double' | 'single' | 'none'
   /** Hex colour for rules and headings. Default #000. */
   accentColor?: string
-  /** Distance in mm from page edge to the outer border line. Default 7. */
+  /** Distance in mm from page edge to the outer border line. Default 14. */
   borderInsetMm?: number
   /** Institution heading font size in pt. Default 20. */
   institutionSizePt?: number

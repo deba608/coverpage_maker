@@ -46,6 +46,8 @@ export const brandConfigSchema = z.object({
   address: z.string().max(120).optional(),
   logo: assetRef.optional(),
   logoWidthMm: z.number().positive().max(200).optional(),
+  logoAlign: z.enum(['left', 'center', 'right']).optional(),
+  logoOffsetYMm: z.number().min(-50).max(50).optional(),
   font: z.enum(['serif', 'sans', 'times', 'garamond']),
   border: z.enum(['double', 'single', 'none']),
   accentColor: z
