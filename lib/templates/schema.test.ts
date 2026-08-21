@@ -79,6 +79,20 @@ describe('templateMetaSchema', () => {
     expect(() => templateMetaSchema.parse(valid)).not.toThrow()
   })
 
+  it('accepts valid logo alignment, size, and position offset', () => {
+    const withLogo = {
+      ...valid,
+      brand: {
+        ...valid.brand,
+        logo: '/templates/sambalpur-lab/seal.png',
+        logoWidthMm: 65,
+        logoAlign: 'left',
+        logoOffsetYMm: -10,
+      },
+    }
+    expect(() => templateMetaSchema.parse(withLogo)).not.toThrow()
+  })
+
   it('rejects duplicate field keys', () => {
     const dup = { ...valid, fields: [valid.fields[0], { ...valid.fields[1], key: 'labName' }] }
     expect(() => templateMetaSchema.parse(dup)).toThrow()

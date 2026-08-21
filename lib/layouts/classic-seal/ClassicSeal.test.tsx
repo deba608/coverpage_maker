@@ -49,4 +49,19 @@ describe('ClassicSeal', () => {
     expect(html).toContain('SOME OTHER COLLEGE')
     expect(html).not.toContain('<img')
   })
+
+  it('renders logo with customized size, alignment, and position offset', () => {
+    const brand: BrandConfig = {
+      ...meta.brand,
+      logoWidthMm: 75,
+      logoAlign: 'left',
+      logoOffsetYMm: 12,
+    }
+    const html = renderToStaticMarkup(
+      <ClassicSeal brand={brand} fields={meta.fields} values={full} />,
+    )
+    expect(html).toContain('--cs-logo-width:75mm')
+    expect(html).toContain('--cs-logo-align:flex-start')
+    expect(html).toContain('--cs-logo-offset-y:12mm')
+  })
 })

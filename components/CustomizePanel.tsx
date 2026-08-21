@@ -19,10 +19,16 @@ const BORDER_LABELS: Record<BrandConfig['border'], string> = {
   none: 'No border',
 }
 
+const LOGO_ALIGN_LABELS: Record<'left' | 'center' | 'right', string> = {
+  left: 'Left',
+  center: 'Center',
+  right: 'Right',
+}
+
 /**
- * The "make it yours" panel: border, ink colour, typeface, seal size, and a
- * replacement seal upload. Everything is an override on top of the template —
- * Reset returns to exactly what the template ships.
+ * The "make it yours" panel: border, ink colour, typeface, seal size, alignment,
+ * position, and a replacement seal upload. Everything is an override on top of the
+ * template — Reset returns to exactly what the template ships.
  */
 export function CustomizePanel({
   brand,
@@ -57,6 +63,8 @@ export function CustomizePanel({
     font: overrides.font ?? brand.font,
     accentColor: overrides.accentColor ?? brand.accentColor ?? '#000000',
     logoWidthMm: overrides.logoWidthMm ?? brand.logoWidthMm ?? 55,
+    logoAlign: (overrides.logoAlign ?? brand.logoAlign ?? 'center') as 'left' | 'center' | 'right',
+    logoOffsetYMm: overrides.logoOffsetYMm ?? brand.logoOffsetYMm ?? 0,
     logo: overrides.logo ?? brand.logo,
     borderInsetMm: overrides.borderInsetMm ?? brand.borderInsetMm ?? 14,
     institutionSizePt: overrides.institutionSizePt ?? brand.institutionSizePt ?? 20,
@@ -124,21 +132,105 @@ export function CustomizePanel({
             />
           </label>
 
-          <label className="block">
-            <span className="mb-1 flex justify-between text-xs font-medium text-ink">
-              <span>Seal size</span>
-              <span className="tabular-nums text-pencil">{effective.logoWidthMm}mm</span>
+          {/* Seal / Logo customizer section */}
+          <div className="rounded-[2px] border border-rule/60 bg-sheet/40 p-3 space-y-3">
+            <span className="block text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-pencil">
+              Seal / Logo
             </span>
-            <input
-              type="range"
-              min={30}
-              max={90}
-              step={1}
-              value={effective.logoWidthMm}
-              onChange={(e) => set('logoWidthMm', Number(e.target.value))}
-              className="w-full accent-[var(--ink)]"
-            />
-          </label>
+
+            <div>
+              <span className="mb-1 block text-xs font-medium text-ink">Image</span>
+              <div className="flex items-center gap-3">
+                {effective.logo ? (
+                  <img
+                    src={effective.logo}
+                    alt=""
+                    className="h-12 w-12 rounded-[2px] border border-rule bg-sheet object-contain"
+                  />
+                ) : (
+                  <span className="grid h-12 w-12 place-items-center rounded-[2px] border border-dashed border-rule text-[0.625rem] text-pencil">
+                    none
+                  </span>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className="btn-ghost text-xs" onClick={() => fileRef.current?.click()}>
+                    {effective.logo ? 'Replace image' : 'Upload image'}
+                  </button>
+                  {effective.logo && (
+                    <button
+                      type="button"
+                      className="btn-ghost text-xs text-margin"
+                      onClick={() => set('logo', '')}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={(e) => uploadLogo(e.target.files?.[0])}
+                />
+              </div>
+              {logoError && <p className="mt-1 text-xs text-margin">{logoError}</p>}
+            </div>
+
+            <label className="block">
+              <span className="mb-1 flex justify-between text-xs font-medium text-ink">
+                <span>Logo size (width)</span>
+                <span className="tabular-nums text-pencil">{effective.logoWidthMm}mm</span>
+              </span>
+              <input
+                type="range"
+                min={20}
+                max={120}
+                step={1}
+                value={effective.logoWidthMm}
+                onChange={(e) => set('logoWidthMm', Number(e.target.value))}
+                className="w-full accent-[var(--ink)]"
+              />
+            </label>
+
+            <div>
+              <span className="mb-1 block text-xs font-medium text-ink">Logo alignment</span>
+              <div className="grid grid-cols-3 gap-2">
+                {(['left', 'center', 'right'] as const).map((align) => (
+                  <button
+                    key={align}
+                    type="button"
+                    onClick={() => set('logoAlign', align)}
+                    className={`rounded-[2px] border px-2 py-1 text-xs font-medium transition-colors ${
+                      effective.logoAlign === align
+                        ? 'border-ink bg-ink text-sheet'
+                        : 'border-rule bg-sheet text-ink hover:border-pencil'
+                    }`}
+                  >
+                    {LOGO_ALIGN_LABELS[align]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <label className="block">
+              <span className="mb-1 flex justify-between text-xs font-medium text-ink">
+                <span>Logo vertical position</span>
+                <span className="tabular-nums text-pencil">
+                  {effective.logoOffsetYMm > 0 ? `+${effective.logoOffsetYMm}` : effective.logoOffsetYMm}mm
+                </span>
+              </span>
+              <input
+                type="range"
+                min={-40}
+                max={40}
+                step={1}
+                value={effective.logoOffsetYMm}
+                onChange={(e) => set('logoOffsetYMm', Number(e.target.value))}
+                className="w-full accent-[var(--ink)]"
+              />
+            </label>
+          </div>
 
           <div>
             <span className="mb-1 block text-xs font-medium text-ink">Border margin (mm from page edge)</span>
@@ -201,34 +293,6 @@ export function CustomizePanel({
               className="w-full accent-[var(--ink)]"
             />
           </label>
-
-          <div>
-            <span className="mb-1 block text-xs font-medium text-ink">Seal / logo</span>
-            <div className="flex items-center gap-3">
-              {effective.logo ? (
-                <img
-                  src={effective.logo}
-                  alt=""
-                  className="h-12 w-12 rounded-[2px] border border-rule bg-sheet object-contain"
-                />
-              ) : (
-                <span className="grid h-12 w-12 place-items-center rounded-[2px] border border-dashed border-rule text-[0.625rem] text-pencil">
-                  none
-                </span>
-              )}
-              <button type="button" className="btn-ghost" onClick={() => fileRef.current?.click()}>
-                {effective.logo ? 'Replace image' : 'Upload image'}
-              </button>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                onChange={(e) => uploadLogo(e.target.files?.[0])}
-              />
-            </div>
-            {logoError && <p className="mt-1 text-xs text-margin">{logoError}</p>}
-          </div>
 
           {hasOverrides(overrides) && (
             <button type="button" className="btn-ghost" onClick={() => onChange({})}>

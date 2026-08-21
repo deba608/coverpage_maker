@@ -14,6 +14,12 @@ const FONT_STACKS: Record<string, string> = {
   garamond: "Garamond, 'EB Garamond', 'Tinos', serif",
 }
 
+const LOGO_ALIGN_JUSTIFY: Record<'left' | 'center' | 'right', string> = {
+  left: 'flex-start',
+  center: 'center',
+  right: 'flex-end',
+}
+
 /**
  * Centred institution block, seal, document title, and a boxed "Submitted By"
  * details table. The classic Indian college coverpage.
