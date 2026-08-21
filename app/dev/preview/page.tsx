@@ -8,7 +8,7 @@ import { notFound } from 'next/navigation'
 const SAMPLE = {
   labName: 'CN LAB',
   semester: '4th Semester',
-  name: 'DEBASHISH PRADHAN',
+  name: 'Debashish Pradhan',
   rollNo: '24BTCSE04',
   section: 'A',
   branch: 'CSE',

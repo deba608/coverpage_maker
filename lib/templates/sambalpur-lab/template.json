@@ -46,7 +46,7 @@
       "type": "text",
       "required": true,
       "maxLength": 32,
-      "placeholder": "DEBASHISH PRADHAN"
+      "placeholder": "Debashish Pradhan"
     },
     {
       "key": "rollNo",

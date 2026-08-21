@@ -53,6 +53,10 @@ export function ClassicSeal({ brand, fields, values }: LayoutProps) {
           '--cs-accent': brand.accentColor ?? '#000',
           '--cs-logo-width': `${brand.logoWidthMm ?? 55}mm`,
           '--cs-border-inset': `${brand.borderInsetMm ?? 14}mm`,
+          '--cs-institution-size': `${brand.institutionSizePt ?? 20}pt`,
+          '--cs-title-size': `${brand.titleSizePt ?? 24}pt`,
+          '--cs-details-size': `${brand.detailsSizePt ?? 20}pt`,
+          '--cs-content-top': `${brand.contentTopMm ?? 28}mm`,
         } as React.CSSProperties
       }
     >

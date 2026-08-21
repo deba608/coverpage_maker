@@ -52,7 +52,11 @@ export const brandConfigSchema = z.object({
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/, 'accentColor must be a 6-digit hex colour')
     .optional(),
-  borderInsetMm: z.number().min(2).max(25).optional(),
+  borderInsetMm: z.number().min(2).max(40).optional(),
+  institutionSizePt: z.number().min(8).max(40).optional(),
+  titleSizePt: z.number().min(8).max(48).optional(),
+  detailsSizePt: z.number().min(8).max(36).optional(),
+  contentTopMm: z.number().min(5).max(80).optional(),
 })
 
 export const layoutIdSchema = z.enum(['classic-seal', 'custom'])

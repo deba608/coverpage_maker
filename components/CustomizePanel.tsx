@@ -59,6 +59,10 @@ export function CustomizePanel({
     logoWidthMm: overrides.logoWidthMm ?? brand.logoWidthMm ?? 55,
     logo: overrides.logo ?? brand.logo,
     borderInsetMm: overrides.borderInsetMm ?? brand.borderInsetMm ?? 14,
+    institutionSizePt: overrides.institutionSizePt ?? brand.institutionSizePt ?? 20,
+    titleSizePt: overrides.titleSizePt ?? brand.titleSizePt ?? 24,
+    detailsSizePt: overrides.detailsSizePt ?? brand.detailsSizePt ?? 20,
+    contentTopMm: overrides.contentTopMm ?? brand.contentTopMm ?? 28,
   }
 
   return (
@@ -155,6 +159,48 @@ export function CustomizePanel({
               ))}
             </div>
           </div>
+
+          <div>
+            <span className="mb-1 block text-xs font-medium text-ink">Font sizes (pt)</span>
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  { label: 'Heading', key: 'institutionSizePt', min: 8, max: 40 },
+                  { label: 'Title', key: 'titleSizePt', min: 8, max: 48 },
+                  { label: 'Details', key: 'detailsSizePt', min: 8, max: 36 },
+                ] as const
+              ).map(({ label, key, min, max }) => (
+                <label key={key} className="flex flex-col gap-1 text-xs text-ink">
+                  <span>{label}</span>
+                  <input
+                    type="number"
+                    min={min}
+                    max={max}
+                    step={1}
+                    value={effective[key]}
+                    onChange={(e) => set(key, Math.max(min, Math.min(max, Number(e.target.value))))}
+                    className="ink-input w-full"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <label className="block">
+            <span className="mb-1 flex justify-between text-xs font-medium text-ink">
+              <span>Content top position (mm)</span>
+              <span className="tabular-nums text-pencil">{effective.contentTopMm}mm</span>
+            </span>
+            <input
+              type="range"
+              min={5}
+              max={80}
+              step={1}
+              value={effective.contentTopMm}
+              onChange={(e) => set('contentTopMm', Number(e.target.value))}
+              className="w-full accent-[var(--ink)]"
+            />
+          </label>
 
           <div>
             <span className="mb-1 block text-xs font-medium text-ink">Seal / logo</span>

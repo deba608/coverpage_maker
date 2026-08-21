@@ -62,7 +62,7 @@
   position: relative;
   height: 100%;
   box-sizing: border-box;
-  padding: 28mm 24mm 24mm;
+  padding: var(--cs-content-top, 28mm) 24mm 24mm;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -70,7 +70,7 @@
 
 /* Institution block: first heading line sits at ~42mm in the reference. */
 .cs-institution {
-  font-size: 20pt;
+  font-size: var(--cs-institution-size, 20pt);
   font-weight: 700;
   line-height: 1.35;
   letter-spacing: 0.02em;
@@ -100,13 +100,13 @@
 }
 
 .cs-title {
-  font-size: 24pt;
+  font-size: var(--cs-title-size, 24pt);
   font-weight: 700;
   margin: 0;
 }
 
 .cs-subtitle {
-  font-size: 24pt;
+  font-size: var(--cs-title-size, 24pt);
   font-weight: 700;
   margin: 3.5mm 0 0;
 }
@@ -121,7 +121,7 @@
   border: 1mm solid var(--cs-accent, #000);
   border-radius: 3mm;
   text-align: left;
-  font-size: 20pt;
+  font-size: var(--cs-details-size, 20pt);
 }
 
 .cs-details-heading {

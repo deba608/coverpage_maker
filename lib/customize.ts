@@ -14,8 +14,12 @@ export interface BrandOverrides {
   accentColor?: string
   logoWidthMm?: number
   logo?: string
-  /** Distance from page edge to outer border line in mm (2–25). Default 7. */
+  /** Distance from page edge to outer border line in mm (2–40). Default 14. */
   borderInsetMm?: number
+  institutionSizePt?: number
+  titleSizePt?: number
+  detailsSizePt?: number
+  contentTopMm?: number
 }
 
 /** localStorage record: templateId → that template's overrides. */
@@ -35,6 +39,10 @@ export function applyOverrides(meta: TemplateMeta, o: BrandOverrides | undefined
   if (o!.logoWidthMm) brand.logoWidthMm = o!.logoWidthMm
   if (o!.logo) brand.logo = o!.logo
   if (o!.borderInsetMm !== undefined) brand.borderInsetMm = o!.borderInsetMm
+  if (o!.institutionSizePt !== undefined) brand.institutionSizePt = o!.institutionSizePt
+  if (o!.titleSizePt !== undefined) brand.titleSizePt = o!.titleSizePt
+  if (o!.detailsSizePt !== undefined) brand.detailsSizePt = o!.detailsSizePt
+  if (o!.contentTopMm !== undefined) brand.contentTopMm = o!.contentTopMm
   return { ...meta, brand }
 }
 

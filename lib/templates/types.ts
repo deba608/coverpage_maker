@@ -55,6 +55,14 @@ export interface BrandConfig {
   accentColor?: string
   /** Distance in mm from page edge to the outer border line. Default 7. */
   borderInsetMm?: number
+  /** Institution heading font size in pt. Default 20. */
+  institutionSizePt?: number
+  /** Lab name / title font size in pt. Default 24. */
+  titleSizePt?: number
+  /** Details box font size in pt. Default 20. */
+  detailsSizePt?: number
+  /** Content top padding in mm (controls vertical position). Default 28. */
+  contentTopMm?: number
 }
 
 /**

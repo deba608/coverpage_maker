@@ -16,7 +16,7 @@ await page.goto(base, { waitUntil: 'networkidle0' })
 // Fill the form.
 await page.type('#field-labName', 'CN LAB')
 await page.select('#field-semester', '4th Semester')
-await page.type('#field-name', 'DEBASHISH PRADHAN')
+await page.type('#field-name', 'Debashish Pradhan')
 await page.type('#field-rollNo', '24BTCSE04')
 await page.select('#field-section', 'A')
 await page.select('#field-branch', 'CSE')
@@ -39,7 +39,7 @@ const res = await page.evaluate(async () => {
       values: {
         labName: 'CN LAB',
         semester: '4th Semester',
-        name: 'DEBASHISH PRADHAN',
+        name: 'Debashish Pradhan',
         rollNo: '24BTCSE04',
         section: 'A',
         branch: 'CSE',
