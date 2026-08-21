@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import type { LayoutComponent, TemplateMeta, TemplateValues } from '@/lib/templates/types'
 import { DynamicForm, isComplete } from './DynamicForm'
 import { Preview } from './Preview'
 import { TemplatePicker } from './TemplatePicker'
 import { CustomizePanel } from './CustomizePanel'
 import { BulkPanel } from './BulkPanel'
+import { ElementSelector } from './ElementSelector'
 import { useLocalStorage } from '@/lib/useLocalStorage'
 import { applyOverrides, hasOverrides, type OverridesByTemplate } from '@/lib/customize'
 import { getTemplate } from '@/lib/templates/registry'
@@ -31,6 +32,8 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
     'coverpage:overrides',
     {},
   )
+  const [previewScale, setPreviewScale] = useState(0.5)
+  const onScale = useCallback((s: number) => setPreviewScale(s), [])
   const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -237,11 +240,18 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
 
         <section aria-label="Preview" className="min-w-0 lg:sticky lg:top-8">
           <h2 className="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-pencil">
-            Preview — updates as you type
+            Preview — click any section to edit
           </h2>
-          <Preview>
-            <Component brand={meta.brand} fields={meta.fields} values={values} />
-          </Preview>
+          <ElementSelector
+            brand={baseMeta.brand}
+            overrides={overrides}
+            onChange={setOverrides}
+            scale={previewScale}
+          >
+            <Preview onScale={onScale}>
+              <Component brand={meta.brand} fields={meta.fields} values={values} />
+            </Preview>
+          </ElementSelector>
         </section>
       </div>
 

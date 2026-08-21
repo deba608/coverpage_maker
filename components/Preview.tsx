@@ -11,7 +11,13 @@ const A4_HEIGHT_PX = 1123
  * one transform keeps the preview geometrically identical to the PDF at any
  * viewport size — nothing reflows, everything just shrinks.
  */
-export function Preview({ children }: { children: React.ReactNode }) {
+export function Preview({
+  children,
+  onScale,
+}: {
+  children: React.ReactNode
+  onScale?: (scale: number) => void
+}) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.5)
 
@@ -19,10 +25,13 @@ export function Preview({ children }: { children: React.ReactNode }) {
     const el = containerRef.current
     if (!el) return
     const observer = new ResizeObserver(([entry]) => {
-      setScale(entry.contentRect.width / A4_WIDTH_PX)
+      const s = entry.contentRect.width / A4_WIDTH_PX
+      setScale(s)
+      onScale?.(s)
     })
     observer.observe(el)
     return () => observer.disconnect()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
