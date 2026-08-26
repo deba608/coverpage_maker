@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { fireEvent, render } from '@testing-library/react'
 import { ClassicSeal } from './ClassicSeal'
 import type { BrandConfig, FieldDef } from '@/lib/templates/types'
 import sambalpurLab from '@/lib/templates/sambalpur-lab/template.json'
@@ -63,5 +64,77 @@ describe('ClassicSeal', () => {
     expect(html).toContain('--cs-logo-width:75mm')
     expect(html).toContain('--cs-logo-align:flex-start')
     expect(html).toContain('--cs-logo-offset-y:12mm')
+  })
+
+  it('tags values and zones only in interactive mode — the PDF path stays clean', () => {
+    const pdf = renderToStaticMarkup(
+      <ClassicSeal brand={meta.brand} fields={meta.fields} values={full} />,
+    )
+    expect(pdf).not.toContain('data-field-key')
+    expect(pdf).not.toContain('data-zone')
+
+    const preview = renderToStaticMarkup(
+      <ClassicSeal brand={meta.brand} fields={meta.fields} values={full} interactive />,
+    )
+    expect(preview).toContain('data-field-key')
+    expect(preview).toContain('data-zone')
+    expect(preview).not.toContain('contenteditable')
+  })
+
+  it('renders a contentEditable only for the field named by editingKey', () => {
+    const html = renderToStaticMarkup(
+      <ClassicSeal
+        brand={meta.brand}
+        fields={meta.fields}
+        values={full}
+        interactive
+        editingKey="labName"
+      />,
+    )
+    expect(html).toMatch(/contenteditable/i)
+    expect(html).toContain('data-editing="true"')
+  })
+
+  it('commits trimmed text on blur; Escape-flagged blur discards instead', () => {
+    const onCommitEdit = vi.fn()
+    const onCancelEdit = vi.fn()
+    const { getByText, unmount } = render(
+      <ClassicSeal
+        brand={meta.brand}
+        fields={meta.fields}
+        values={{ ...full, labName: 'CN LAB' }}
+        interactive
+        editingKey="labName"
+        onCommitEdit={onCommitEdit}
+        onCancelEdit={onCancelEdit}
+      />,
+    )
+    const editor = getByText('CN LAB')
+    editor.textContent = '  OS LAB  '
+    fireEvent.blur(editor)
+    expect(onCommitEdit).toHaveBeenCalledWith('labName', 'OS LAB')
+    expect(onCancelEdit).not.toHaveBeenCalled()
+    unmount()
+
+    const onCommit2 = vi.fn()
+    const onCancel2 = vi.fn()
+    const second = render(
+      <ClassicSeal
+        brand={meta.brand}
+        fields={meta.fields}
+        values={{ ...full, labName: 'CN LAB' }}
+        interactive
+        editingKey="labName"
+        onCommitEdit={onCommit2}
+        onCancelEdit={onCancel2}
+      />,
+    )
+    const cancelled = second.getByText('CN LAB')
+    cancelled.textContent = 'typed junk'
+    ;(cancelled as HTMLElement).dataset.cancelled = 'true'
+    fireEvent.blur(cancelled)
+    expect(onCancel2).toHaveBeenCalled()
+    expect(onCommit2).not.toHaveBeenCalled()
+    second.unmount()
   })
 })

@@ -41,6 +41,9 @@ export function ClassicSeal({
   const subtitle = fieldsInSlot(fields, 'subtitle')[0]
   const details = fieldsInSlot(fields, 'details')
 
+  /** Region tag for the editor's click delegation; absent on the PDF path. */
+  const zoneProps = (id: string) => (interactive ? { 'data-zone': id } : {})
+
   /**
    * Props for one field-value node. Interactive mode tags every value with
    * data-field-key (the double-click target); the field being edited also
@@ -52,6 +55,7 @@ export function ClassicSeal({
     const editing = interactive && editingKey === field.key
     const base: Record<string, unknown> = { 'data-field-key': field.key }
     if (!editing) return base
+
 
     return {
       ...base,
@@ -128,7 +132,7 @@ export function ClassicSeal({
         {/* data-zone tags drive click-to-edit in the preview (interactive
             mode only); the PDF renders without them. Subtitle shares the
             title tab — the panel controls are identical. */}
-        <div data-zone="heading">
+        <div {...zoneProps('heading')}>
           {brand.institution.map((line, i) => (
             // Index key: two identical lines are legal and would collide on key={line}.
             <h1 className="cs-institution" key={i}>
@@ -138,23 +142,23 @@ export function ClassicSeal({
           {brand.address && <p className="cs-address">{brand.address}</p>}
         </div>
 
-        <div className="cs-logo-band" data-zone="seal">
+        <div className="cs-logo-band" {...zoneProps('seal')}>
           {brand.logo && <img className="cs-logo" src={brand.logo} alt="" />}
         </div>
 
         {title && (
-          <p className={`cs-title${fit(title.key, 26, 36)}`} data-zone="title">
+          <p className={`cs-title${fit(title.key, 26, 36)}`} {...zoneProps('title')}>
             {show(title)}
           </p>
         )}
         {subtitle && (
-          <p className={`cs-subtitle${fit(subtitle.key, 26, 36)}`} data-zone="title">
+          <p className={`cs-subtitle${fit(subtitle.key, 26, 36)}`} {...zoneProps('title')}>
             {show(subtitle)}
           </p>
         )}
 
         {details.length > 0 && (
-          <div className="cs-details" data-zone="details">
+          <div className="cs-details" {...zoneProps('details')}>
             <p className="cs-details-heading">Submitted By :-</p>
             <table className="cs-details-table">
               <tbody>
