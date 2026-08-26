@@ -185,3 +185,14 @@
 .cs-placeholder {
   color: #999;
 }
+
+/* Click-to-edit affordances. Only the app preview renders data-interactive
+ * on .cs-page, so these selectors match nothing in the generated PDF. */
+.cs-page[data-interactive] [data-zone] {
+  cursor: pointer;
+}
+
+.cs-page[data-interactive] [data-zone]:hover {
+  outline: 2px solid rgba(59, 130, 246, 0.45);
+  outline-offset: 2px;
+}

@@ -27,7 +27,7 @@ const LOGO_ALIGN_JUSTIFY: Record<'left' | 'center' | 'right', string> = {
  * Pure function of its props — no hooks, no browser APIs — because the PDF
  * route renders it with renderToStaticMarkup on the server.
  */
-export function ClassicSeal({ brand, fields, values }: LayoutProps) {
+export function ClassicSeal({ brand, fields, values, interactive }: LayoutProps) {
   const title = fieldsInSlot(fields, 'title')[0]
   const subtitle = fieldsInSlot(fields, 'subtitle')[0]
   const details = fieldsInSlot(fields, 'details')
@@ -53,6 +53,7 @@ export function ClassicSeal({ brand, fields, values }: LayoutProps) {
     <div
       className="cs-page"
       data-border={brand.border}
+      data-interactive={interactive ? '' : undefined}
       style={
         {
           '--cs-font': FONT_STACKS[brand.font] ?? FONT_STACKS.times,
@@ -70,31 +71,36 @@ export function ClassicSeal({ brand, fields, values }: LayoutProps) {
     >
       <div className="cs-border" />
       <div className="cs-content">
-        {brand.institution.map((line, i) => (
-          // Index key: two identical lines are legal and would collide on key={line}.
-          <h1 className="cs-institution" key={i}>
-            {line}
-          </h1>
-        ))}
-        {brand.address && <p className="cs-address">{brand.address}</p>}
+        {/* data-zone tags drive click-to-edit in the preview (interactive
+            mode only); the PDF renders without them. Subtitle shares the
+            title tab — the panel controls are identical. */}
+        <div data-zone="heading">
+          {brand.institution.map((line, i) => (
+            // Index key: two identical lines are legal and would collide on key={line}.
+            <h1 className="cs-institution" key={i}>
+              {line}
+            </h1>
+          ))}
+          {brand.address && <p className="cs-address">{brand.address}</p>}
+        </div>
 
-        <div className="cs-logo-band">
+        <div className="cs-logo-band" data-zone="seal">
           {brand.logo && <img className="cs-logo" src={brand.logo} alt="" />}
         </div>
 
         {title && (
-          <p className={`cs-title${fit(title.key, 26, 36)}`}>
+          <p className={`cs-title${fit(title.key, 26, 36)}`} data-zone="title">
             {show(title.key, `[${title.label}]`)}
           </p>
         )}
         {subtitle && (
-          <p className={`cs-subtitle${fit(subtitle.key, 26, 36)}`}>
+          <p className={`cs-subtitle${fit(subtitle.key, 26, 36)}`} data-zone="title">
             {show(subtitle.key, `[${subtitle.label}]`)}
           </p>
         )}
 
         {details.length > 0 && (
-          <div className="cs-details">
+          <div className="cs-details" data-zone="details">
             <p className="cs-details-heading">Submitted By :-</p>
             <table className="cs-details-table">
               <tbody>

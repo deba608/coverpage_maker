@@ -95,6 +95,12 @@ export interface LayoutProps {
   brand: BrandConfig
   fields: readonly FieldDef[]
   values: TemplateValues
+  /**
+   * True only in the on-screen preview: the layout then tags its editable
+   * regions with data-zone attributes so the editor can offer click-to-edit.
+   * Never set on the PDF path, which must stay a clean static document.
+   */
+  interactive?: boolean
 }
 
 /**
