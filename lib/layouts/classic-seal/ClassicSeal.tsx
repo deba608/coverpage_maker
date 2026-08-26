@@ -119,6 +119,7 @@ export function ClassicSeal({
           '--cs-logo-width': `${brand.logoWidthMm ?? 55}mm`,
           '--cs-logo-align': LOGO_ALIGN_JUSTIFY[brand.logoAlign ?? 'center'] ?? 'center',
           '--cs-logo-offset-y': `${brand.logoOffsetYMm ?? 0}mm`,
+          '--cs-logo-offset-x': `${brand.logoOffsetXMm ?? 0}mm`,
           '--cs-border-inset': `${brand.borderInsetMm ?? 14}mm`,
           '--cs-institution-size': brand.institutionSizePt ? `${brand.institutionSizePt}pt` : undefined,
           '--cs-title-size': brand.titleSizePt ? `${brand.titleSizePt}pt` : undefined,

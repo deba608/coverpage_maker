@@ -48,6 +48,7 @@ export const brandConfigSchema = z.object({
   logoWidthMm: z.number().positive().max(200).optional(),
   logoAlign: z.enum(['left', 'center', 'right']).optional(),
   logoOffsetYMm: z.number().min(-50).max(50).optional(),
+  logoOffsetXMm: z.number().min(-80).max(80).optional(),
   font: z.enum(['serif', 'sans', 'times', 'garamond']),
   border: z.enum(['double', 'single', 'none']),
   accentColor: z

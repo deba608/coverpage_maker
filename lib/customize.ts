@@ -15,6 +15,7 @@ export interface BrandOverrides {
   logoWidthMm?: number
   logoAlign?: BrandConfig['logoAlign']
   logoOffsetYMm?: number
+  logoOffsetXMm?: number
   logo?: string
   /** Distance from page edge to outer border line in mm (2–40). Default 14. */
   borderInsetMm?: number
@@ -41,6 +42,7 @@ export function applyOverrides(meta: TemplateMeta, o: BrandOverrides | undefined
   if (o!.logoWidthMm !== undefined) brand.logoWidthMm = o!.logoWidthMm
   if (o!.logoAlign !== undefined) brand.logoAlign = o!.logoAlign
   if (o!.logoOffsetYMm !== undefined) brand.logoOffsetYMm = o!.logoOffsetYMm
+  if (o!.logoOffsetXMm !== undefined) brand.logoOffsetXMm = o!.logoOffsetXMm
   if (o!.logo) brand.logo = o!.logo
   if (o!.borderInsetMm !== undefined) brand.borderInsetMm = o!.borderInsetMm
   if (o!.institutionSizePt !== undefined) brand.institutionSizePt = o!.institutionSizePt

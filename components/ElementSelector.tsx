@@ -186,6 +186,7 @@ export function ElementSelector({
     logoWidthMm:         overrides.logoWidthMm         ?? brand.logoWidthMm         ?? 55,
     logoAlign:          (overrides.logoAlign           ?? brand.logoAlign           ?? 'center') as 'left'|'center'|'right',
     logoOffsetYMm:       overrides.logoOffsetYMm       ?? brand.logoOffsetYMm       ?? 0,
+    logoOffsetXMm:       overrides.logoOffsetXMm       ?? brand.logoOffsetXMm       ?? 0,
     borderInsetMm:       overrides.borderInsetMm       ?? brand.borderInsetMm       ?? 14,
     institutionSizePt:   overrides.institutionSizePt   ?? brand.institutionSizePt   ?? 20,
     titleSizePt:         overrides.titleSizePt         ?? brand.titleSizePt         ?? 24,
@@ -234,6 +235,10 @@ export function ElementSelector({
         <Field label="Vertical offset">
           <NumInput value={eff.logoOffsetYMm} min={-40} max={40} unit="mm"
             onChange={(v) => set('logoOffsetYMm', v)} />
+        </Field>
+        <Field label="Horizontal offset">
+          <NumInput value={eff.logoOffsetXMm} min={-80} max={80} unit="mm"
+            onChange={(v) => set('logoOffsetXMm', v)} />
         </Field>
       </Row>
     )

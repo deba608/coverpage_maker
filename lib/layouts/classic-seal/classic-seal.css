@@ -93,7 +93,7 @@
   align-items: center;
   justify-content: var(--cs-logo-align, center);
   margin: 4mm 0;
-  transform: translateY(var(--cs-logo-offset-y, 0mm));
+  transform: translateY(var(--cs-logo-offset-y, 0mm)) translateX(var(--cs-logo-offset-x, 0mm));
 }
 
 .cs-logo {

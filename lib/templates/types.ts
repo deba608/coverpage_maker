@@ -53,6 +53,8 @@ export interface BrandConfig {
   logoAlign?: 'left' | 'center' | 'right'
   /** Vertical position offset in millimetres (-40 to 40). Default 0. */
   logoOffsetYMm?: number
+  /** Horizontal position offset in millimetres (-80 to 80). Default 0. */
+  logoOffsetXMm?: number
   font: 'serif' | 'sans' | 'times' | 'garamond'
   border: 'double' | 'single' | 'none'
   /** Hex colour for rules and headings. Default #000. */
