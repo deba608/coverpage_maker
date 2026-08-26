@@ -15,6 +15,9 @@ import { ZipWriter } from '@/lib/bulk/zip'
 /** Render route cap for merged PDF pages. */
 const MERGE_LIMIT = 200
 
+/** Parallel fetches per ZIP run — bounded so the lambda's one browser isn't hammered. */
+const ZIP_CONCURRENCY = 5
+
 /**
  * Whole-class mode: get the rows in (CSV file or a straight paste from
  * Excel/Sheets), validate them, and generate either a ZIP of per-student PDFs
@@ -102,23 +105,46 @@ export function BulkPanel({
 
   async function generateZip() {
     setProgress({ done: 0, total: valid.length })
+    // Fetch with a small worker pool; assemble in row order afterwards so the
+    // ZIP is deterministic no matter which fetch landed first.
+    const pdfs = new Array<Uint8Array | undefined>(valid.length)
+    let next = 0
+    let finished = 0
+    let failure: Error | undefined
+
+    const worker = async () => {
+      while (!cancelled.current && !failure) {
+        const i = next++
+        if (i >= valid.length) return
+        const row = valid[i]
+        try {
+          const res = await fetch('/api/render', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...buildRequestBase(), values: row.values }),
+          })
+          if (!res.ok) {
+            const msg = (await res.json().catch(() => null))?.error ?? `HTTP ${res.status}`
+            throw new Error(`Row ${row.index}: ${msg}`)
+          }
+          pdfs[i] = new Uint8Array(await res.arrayBuffer())
+          finished++
+          setProgress({ done: finished, total: valid.length })
+        } catch (e) {
+          failure = e instanceof Error ? e : new Error('Bulk generation failed')
+        }
+      }
+    }
+
+    await Promise.all(
+      Array.from({ length: Math.min(ZIP_CONCURRENCY, valid.length) }, () => worker()),
+    )
+    if (cancelled.current) return
+    if (failure) throw failure
+
     const zip = new ZipWriter()
     const used = new Set<string>()
-    for (let i = 0; i < valid.length; i++) {
-      if (cancelled.current) return
-      const row = valid[i]
-      const res = await fetch('/api/render', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...buildRequestBase(), values: row.values }),
-      })
-      if (!res.ok) {
-        const msg = (await res.json().catch(() => null))?.error ?? `HTTP ${res.status}`
-        throw new Error(`Row ${row.index}: ${msg}`)
-      }
-      zip.add(pdfName(row, meta.fields, used), new Uint8Array(await res.arrayBuffer()))
-      setProgress({ done: i + 1, total: valid.length })
-    }
+    valid.forEach((row, i) => zip.add(pdfName(row, meta.fields, used), pdfs[i]!))
     triggerDownload(zip.finish(), `${meta.id}-coverpages.zip`)
   }
 

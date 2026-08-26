@@ -2,27 +2,13 @@
 
 import { useState } from 'react'
 import type { BrandConfig } from '@/lib/templates/types'
+import type { LayoutZone } from '@/lib/layouts/registry'
 import type { BrandOverrides } from '@/lib/customize'
 
-/** A4 at 96dpi */
-const A4_H = 1123
+type ZoneId = string
 
-const ZONES = [
-  { id: 'heading',  label: 'Heading', y0: 0,    y1: 230  },
-  { id: 'seal',     label: 'Seal',    y0: 230,  y1: 700  },
-  { id: 'title',    label: 'Title',   y0: 700,  y1: 840  },
-  { id: 'details',  label: 'Details', y0: 840,  y1: A4_H },
-] as const
-
-type ZoneId = (typeof ZONES)[number]['id'] | 'page'
-
-const TABS: { id: ZoneId; label: string }[] = [
-  { id: 'heading', label: 'Heading' },
-  { id: 'seal',    label: 'Seal'    },
-  { id: 'title',   label: 'Title'   },
-  { id: 'details', label: 'Details' },
-  { id: 'page',    label: 'Page'    },
-]
+/** The always-present "whole page" tab, appended after the layout's zones. */
+const PAGE_TAB: ZoneId = 'page'
 
 const FONT_OPTIONS: BrandConfig['font'][] = ['times', 'serif', 'garamond', 'sans']
 const FONT_LABELS: Record<BrandConfig['font'], string> = {
@@ -39,6 +25,8 @@ interface Props {
   onChange: (next: BrandOverrides) => void
   children: React.ReactNode
   scale: number
+  /** Click bands from the layout registry; a layout without zones gets no overlay. */
+  zones?: readonly LayoutZone[]
 }
 
 /* ── tiny reusable controls ── */
@@ -62,13 +50,24 @@ function NumInput({
   value: number; min: number; max: number; step?: number; unit?: string
   onChange: (v: number) => void
 }) {
+  // Draft state holds partial input ("-", "") while typing. Committing only
+  // finite numbers keeps NaN out of the overrides — a stored NaN serializes
+  // to null in localStorage and later fails schema validation on download.
+  const [draft, setDraft] = useState<string | null>(null)
   return (
     <div className="flex items-center gap-1">
       <input
         type="number"
         min={min} max={max} step={step}
-        value={value}
-        onChange={(e) => onChange(Math.max(min, Math.min(max, Number(e.target.value))))}
+        value={draft ?? String(value)}
+        onChange={(e) => {
+          setDraft(e.target.value)
+          const n = Number(e.target.value)
+          if (e.target.value.trim() !== '' && Number.isFinite(n)) {
+            onChange(Math.max(min, Math.min(max, n)))
+          }
+        }}
+        onBlur={() => setDraft(null)}
         className="w-16 rounded border border-rule bg-sheet px-2 py-1 text-sm text-ink tabular-nums"
       />
       {unit && <span className="text-xs text-pencil">{unit}</span>}
@@ -107,9 +106,14 @@ function ColorInput({ value, onChange }: { value: string; onChange: (v: string) 
 
 /* ── main component ── */
 
-export function ElementSelector({ brand, overrides, onChange, children, scale }: Props) {
-  const [active, setActive] = useState<ZoneId>('heading')
+export function ElementSelector({ brand, overrides, onChange, children, scale, zones = [] }: Props) {
+  const [active, setActive] = useState<ZoneId>(zones[0]?.id ?? PAGE_TAB)
   const [collapsed, setCollapsed] = useState(false)
+
+  const tabs: { id: ZoneId; label: string }[] = [
+    ...zones.map((z) => ({ id: z.id, label: z.label })),
+    { id: PAGE_TAB, label: 'Page' },
+  ]
 
   const set = <K extends keyof BrandOverrides>(key: K, val: BrandOverrides[K]) =>
     onChange({ ...overrides, [key]: val })
@@ -230,28 +234,30 @@ export function ElementSelector({ brand, overrides, onChange, children, scale }:
       {/* Preview with transparent click zones */}
       <div className="relative w-full">
         {children}
-        <div className="pointer-events-none absolute inset-0">
-          {ZONES.map((zone) => {
-            const top = zone.y0 * scale
-            const height = (zone.y1 - zone.y0) * scale
-            const isActive = active === zone.id && !collapsed
-            return (
-              <div
-                key={zone.id}
-                className="pointer-events-auto absolute left-0 right-0 cursor-pointer"
-                style={{
-                  top, height,
-                  background: isActive ? 'rgba(59,130,246,0.07)' : 'transparent',
-                  outline: isActive ? '2px solid rgba(59,130,246,0.4)' : 'none',
-                  outlineOffset: '-2px',
-                  transition: 'background 150ms, outline 150ms',
-                }}
-                onClick={() => handleZoneClick(zone.id)}
-                title={`Edit ${zone.label}`}
-              />
-            )
-          })}
-        </div>
+        {zones.length > 0 && (
+          <div className="pointer-events-none absolute inset-0">
+            {zones.map((zone) => {
+              const top = zone.y0 * scale
+              const height = (zone.y1 - zone.y0) * scale
+              const isActive = active === zone.id && !collapsed
+              return (
+                <div
+                  key={zone.id}
+                  className="pointer-events-auto absolute left-0 right-0 cursor-pointer"
+                  style={{
+                    top, height,
+                    background: isActive ? 'rgba(59,130,246,0.07)' : 'transparent',
+                    outline: isActive ? '2px solid rgba(59,130,246,0.4)' : 'none',
+                    outlineOffset: '-2px',
+                    transition: 'background 150ms, outline 150ms',
+                  }}
+                  onClick={() => handleZoneClick(zone.id)}
+                  title={`Edit ${zone.label}`}
+                />
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Properties panel */}
@@ -259,7 +265,7 @@ export function ElementSelector({ brand, overrides, onChange, children, scale }:
         {/* Tab bar */}
         <div className="flex items-center border-b border-rule">
           <div className="flex flex-1 overflow-x-auto">
-            {TABS.map((tab) => (
+            {tabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"

@@ -14,7 +14,7 @@ import { getTemplate } from '@/lib/templates/registry'
 import { getLayout } from '@/lib/layouts/registry'
 import { deleteCustomTemplate, listCustomTemplates, saveCustomTemplate } from '@/lib/import/storage'
 import { buildBackup, restoreBackup } from '@/lib/backup'
-import { buildShareUrl, clearShareHash, readSharedTemplate } from '@/lib/share'
+import { buildShareUrl, clearShareHash, copyText, readSharedTemplate } from '@/lib/share'
 
 /**
  * The whole client app. One values object is shared across templates, so
@@ -49,9 +49,12 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
     // a link is untrusted input even after schema validation.
     const shared = readSharedTemplate()
     if (shared && window.confirm(`Add the shared template "${shared.name}"?`)) {
-      saveCustomTemplate(shared)
-      setCustomTemplates(listCustomTemplates())
-      setTemplateId(shared.id)
+      if (saveCustomTemplate(shared)) {
+        setCustomTemplates(listCustomTemplates())
+        setTemplateId(shared.id)
+      } else {
+        setNotice('Storage is full or unavailable — the shared template could not be saved.')
+      }
     }
     if (shared) clearShareHash()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only intake
@@ -60,7 +63,11 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
   const all = [...templates, ...customTemplates]
   const customIds = new Set(customTemplates.map((t) => t.id))
 
+  // A template id saved in localStorage can go stale (cleared storage, an
+  // import that failed to save). Fall back to the first builtin — but say so
+  // instead of silently swapping the user's template.
   const resolved = resolve(templateId) ?? resolve(templates[0]?.id ?? '')
+  const missingSelected = templateId !== '' && resolved !== undefined && templateId !== resolved.meta.id
   function resolve(id: string): { meta: TemplateMeta; Component: LayoutComponent } | undefined {
     const builtin = getTemplate(id)
     if (builtin) return builtin
@@ -113,7 +120,12 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
       setNotice(
         `Backup restored: ${restored.templates.length} template${
           restored.templates.length === 1 ? '' : 's'
-        }, settings, and form values.`,
+        }, settings, and form values.` +
+          (restored.failedSaves > 0
+            ? ` ${restored.failedSaves} template${
+                restored.failedSaves === 1 ? '' : 's'
+              } could not be saved (storage full or unavailable).`
+            : ''),
       )
     } catch (e) {
       setNotice(e instanceof Error ? e.message : 'Could not read that backup file')
@@ -124,7 +136,13 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
 
   async function shareCurrent() {
     const { url, logoStripped } = buildShareUrl(meta)
-    await navigator.clipboard.writeText(url)
+    const copied = await copyText(url)
+    if (!copied) {
+      setNotice(
+        `Could not reach the clipboard. Open ${url} in a new tab and copy it from the address bar.`,
+      )
+      return
+    }
     setNotice(
       logoStripped
         ? 'Share link copied. The seal image was too large to fit in a link — the recipient adds their own.'
@@ -133,7 +151,10 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
   }
 
   function removeCustom(id: string) {
-    deleteCustomTemplate(id)
+    if (!deleteCustomTemplate(id)) {
+      setNotice('Could not delete the template — browser storage refused.')
+      return
+    }
     setCustomTemplates((prev) => prev.filter((t) => t.id !== id))
     if (templateId === id) setTemplateId(templates[0]?.id ?? '')
   }
@@ -188,6 +209,12 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
           onSelect={setTemplateId}
           onDelete={removeCustom}
         />
+        {missingSelected && (
+          <p className="mt-3 text-xs text-margin">
+            The selected template is no longer available in this browser — showing{' '}
+            {resolved.meta.name} instead.
+          </p>
+        )}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {customIds.has(meta.id) && (
             <button type="button" className="btn-ghost" onClick={shareCurrent}>
@@ -253,6 +280,7 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
             overrides={overrides}
             onChange={setOverrides}
             scale={previewScale}
+            zones={getLayout(baseMeta.layout)?.zones}
           >
             <Preview onScale={onScale}>
               <Component brand={meta.brand} fields={meta.fields} values={values} />

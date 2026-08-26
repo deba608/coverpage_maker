@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 
 /** A4 at 96dpi. The scale factor divides the container width by this. */
 const A4_WIDTH_PX = 794
@@ -21,9 +21,16 @@ export function Preview({
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.5)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = containerRef.current
     if (!el) return
+    // Measure before first paint so the page never flashes at the default
+    // scale; the observer keeps it correct through resizes.
+    const initial = el.getBoundingClientRect().width / A4_WIDTH_PX
+    if (initial > 0 && Number.isFinite(initial)) {
+      setScale(initial)
+      onScale?.(initial)
+    }
     const observer = new ResizeObserver(([entry]) => {
       const s = entry.contentRect.width / A4_WIDTH_PX
       setScale(s)
@@ -31,7 +38,7 @@ export function Preview({
     })
     observer.observe(el)
     return () => observer.disconnect()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only; onScale is stable in the one caller that passes it
   }, [])
 
   return (

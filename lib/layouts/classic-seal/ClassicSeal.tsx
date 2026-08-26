@@ -70,8 +70,9 @@ export function ClassicSeal({ brand, fields, values }: LayoutProps) {
     >
       <div className="cs-border" />
       <div className="cs-content">
-        {brand.institution.map((line) => (
-          <h1 className="cs-institution" key={line}>
+        {brand.institution.map((line, i) => (
+          // Index key: two identical lines are legal and would collide on key={line}.
+          <h1 className="cs-institution" key={i}>
             {line}
           </h1>
         ))}

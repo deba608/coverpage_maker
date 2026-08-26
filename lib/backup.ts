@@ -33,6 +33,8 @@ export function buildBackup(overrides: OverridesByTemplate, values: TemplateValu
 
 export interface RestoredBackup {
   templates: TemplateMeta[]
+  /** Templates that parsed but could not be written to browser storage. */
+  failedSaves: number
   overrides: OverridesByTemplate
   values: TemplateValues
 }
@@ -47,15 +49,18 @@ export function restoreBackup(text: string): RestoredBackup {
   if (!parsed.success) throw new Error('Not a Coverpage Maker backup file')
 
   const templates: TemplateMeta[] = []
+  let failedSaves = 0
   for (const raw of parsed.data.customTemplates) {
     const t = templateMetaSchema.safeParse(raw)
-    if (t.success) {
-      saveCustomTemplate(t.data as TemplateMeta)
+    if (t.success && saveCustomTemplate(t.data as TemplateMeta)) {
       templates.push(t.data as TemplateMeta)
+    } else if (t.success) {
+      failedSaves++
     }
   }
   return {
     templates,
+    failedSaves,
     overrides: (parsed.data.overrides ?? {}) as OverridesByTemplate,
     values: parsed.data.values ?? {},
   }

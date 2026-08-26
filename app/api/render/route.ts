@@ -21,9 +21,26 @@ const bodySchema = z.object({
   rows: z.array(z.record(z.string(), z.string())).min(1).max(200).optional(),
 }).refine((b) => b.values || b.rows, { message: 'values or rows is required' })
 
+/**
+ * ~3M chars ≈ an inline meta's ≤1 MB data-URI logo plus 200 bulk rows with
+ * slack. Route handlers have no default JSON body limit; without this a
+ * hostile multi-megabyte body pins the lambda's memory.
+ */
+const MAX_BODY_CHARS = 3_000_000
+
 /** POST { templateId | meta, values } → application/pdf */
 export async function POST(request: Request) {
-  const parsedBody = bodySchema.safeParse(await request.json().catch(() => null))
+  const raw = await request.text().catch(() => '')
+  if (raw.length > MAX_BODY_CHARS) {
+    return NextResponse.json({ error: 'Request body too large' }, { status: 413 })
+  }
+  let json: unknown = null
+  try {
+    json = JSON.parse(raw)
+  } catch {
+    // falls through to the schema check, which rejects null bodies
+  }
+  const parsedBody = bodySchema.safeParse(json)
   if (!parsedBody.success) {
     return NextResponse.json({ error: 'Malformed request body' }, { status: 400 })
   }

@@ -1,6 +1,6 @@
 import 'server-only'
 import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { extname, join, sep } from 'node:path'
 // Next refuses a static 'react-dom/server' import in app code (it assumes the
 // SSR-inside-SSR footgun). This is the sanctioned escape: the .edge build
 // carries the same legacy renderToStaticMarkup and is not blocked. Rendering a
@@ -22,18 +22,50 @@ const LAYOUT_CSS: Record<string, string> = {
 }
 
 /**
+ * Fixed repo assets are read once per process — the lambda reuses the module
+ * across warm invocations, and the preview path hits these on every render.
+ * Failed reads evict their promise so a transient fs error can retry.
+ */
+const textCache = new Map<string, Promise<string>>()
+const binaryCache = new Map<string, Promise<Buffer>>()
+
+function readTextCached(relPath: string): Promise<string> {
+  let p = textCache.get(relPath)
+  if (!p) {
+    p = readFile(join(process.cwd(), relPath), 'utf8').catch((err) => {
+      textCache.delete(relPath)
+      throw err
+    })
+    textCache.set(relPath, p)
+  }
+  return p
+}
+
+function readBinaryCached(relPath: string): Promise<Buffer> {
+  let p = binaryCache.get(relPath)
+  if (!p) {
+    p = readFile(join(process.cwd(), relPath)).catch((err) => {
+      binaryCache.delete(relPath)
+      throw err
+    })
+    binaryCache.set(relPath, p)
+  }
+  return p
+}
+
+/**
  * Self-hosted fonts, embedded as data URIs so the PDF's Chromium shapes text
  * with exactly the glyphs the preview used. The lambda has no MS fonts; without
  * this, 'Times New Roman' silently falls back and the geometry drifts.
  */
-async function fontFaces(): Promise<string> {
+async function buildFontFaces(): Promise<string> {
   const faces = [
     { file: 'tinos-latin-400-normal.woff2', weight: 400 },
     { file: 'tinos-latin-700-normal.woff2', weight: 700 },
   ]
   const rules = await Promise.all(
     faces.map(async ({ file, weight }) => {
-      const data = await readFile(join(process.cwd(), 'public', 'fonts', file))
+      const data = await readBinaryCached(join('public', 'fonts', file))
       return `@font-face {
   font-family: 'Tinos';
   src: url(data:font/woff2;base64,${data.toString('base64')}) format('woff2');
@@ -44,13 +76,34 @@ async function fontFaces(): Promise<string> {
   return rules.join('\n')
 }
 
+let facesPromise: Promise<string> | undefined
+function fontFaces(): Promise<string> {
+  // The composed @font-face block is pure output of immutable files — build it once.
+  return (facesPromise ??= buildFontFaces())
+}
+
 /** Logos are inlined as data URIs so Chromium never makes a network request. */
+const MIME_BY_EXT: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+}
+
+const PUBLIC_ROOT = join(process.cwd(), 'public')
+
 async function inlineLogo(logoPath: string | undefined): Promise<string | undefined> {
   if (!logoPath) return undefined
   // Imported templates already carry their logo inline.
   if (logoPath.startsWith('data:')) return logoPath
-  const file = await readFile(join(process.cwd(), 'public', logoPath))
-  const mime = logoPath.endsWith('.svg') ? 'image/svg+xml' : 'image/png'
+  // assetRef only checks the leading '/', so the read must be confined to
+  // /public and a known image extension — otherwise a hostile inline meta
+  // with logo: "/../../.env" would read arbitrary files into the PDF.
+  const abs = join(PUBLIC_ROOT, logoPath)
+  const mime = MIME_BY_EXT[extname(abs).toLowerCase()]
+  if (!mime || !abs.startsWith(PUBLIC_ROOT + sep)) return undefined
+  const file = await readFile(abs)
   return `data:${mime};base64,${file.toString('base64')}`
 }
 
@@ -66,7 +119,7 @@ export async function buildHtml(
   const { meta, Component } = template
 
   const cssPath = LAYOUT_CSS[meta.layout]
-  const css = cssPath ? await readFile(join(process.cwd(), cssPath), 'utf8') : ''
+  const css = cssPath ? await readTextCached(cssPath) : ''
 
   const brand = { ...meta.brand, logo: await inlineLogo(meta.brand.logo) }
   // Several value sets → several .cs-page roots in one document. Each root is

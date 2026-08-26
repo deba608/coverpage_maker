@@ -26,11 +26,25 @@ export function listCustomTemplates(): TemplateMeta[] {
   }
 }
 
-export function saveCustomTemplate(meta: TemplateMeta): void {
+/**
+ * Persists a template. Returns false instead of throwing when the browser
+ * refuses (private mode, quota) — callers surface that as a notice.
+ */
+export function saveCustomTemplate(meta: TemplateMeta): boolean {
   const rest = listCustomTemplates().filter((t) => t.id !== meta.id)
-  window.localStorage.setItem(KEY, JSON.stringify([...rest, meta]))
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify([...rest, meta]))
+    return true
+  } catch {
+    return false
+  }
 }
 
-export function deleteCustomTemplate(id: string): void {
-  window.localStorage.setItem(KEY, JSON.stringify(listCustomTemplates().filter((t) => t.id !== id)))
+export function deleteCustomTemplate(id: string): boolean {
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify(listCustomTemplates().filter((t) => t.id !== id)))
+    return true
+  } catch {
+    return false
+  }
 }

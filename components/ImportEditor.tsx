@@ -9,6 +9,7 @@ import { getLayout } from '@/lib/layouts/registry'
 import { classify } from '@/lib/import/classify'
 import { parsePdf } from '@/lib/import/parsePdf'
 import { saveCustomTemplate } from '@/lib/import/storage'
+import { fileToLogoDataUri } from '@/lib/customize'
 import { Preview } from './Preview'
 
 type Stage = { step: 'drop' } | { step: 'parsing' } | { step: 'edit'; meta: TemplateMeta }
@@ -87,8 +88,18 @@ export function ImportEditor() {
   }
 
   return <Editor initial={stage.meta} onSave={(meta) => {
-    saveCustomTemplate(meta)
-    window.localStorage.setItem('coverpage:template', JSON.stringify(meta.id))
+    // Storage can refuse (private mode, quota) — stay on the editor with an
+    // explanation instead of navigating away as if nothing happened.
+    if (!saveCustomTemplate(meta)) {
+      setProblem('Could not save — browser storage is full or unavailable.')
+      setStage({ step: 'drop' })
+      return
+    }
+    try {
+      window.localStorage.setItem('coverpage:template', JSON.stringify(meta.id))
+    } catch {
+      // selection pointer is best-effort; the template itself is saved
+    }
     router.push('/')
   }} />
 }
@@ -96,6 +107,7 @@ export function ImportEditor() {
 function Editor({ initial, onSave }: { initial: TemplateMeta; onSave: (meta: TemplateMeta) => void }) {
   const [meta, setMeta] = useState(initial)
   const logoInput = useRef<HTMLInputElement>(null)
+  const [logoProblem, setLogoProblem] = useState<string | null>(null)
 
   const layout = meta.layout !== 'custom' ? getLayout(meta.layout) : undefined
   const validation = templateMetaSchema.safeParse(meta)
@@ -107,19 +119,32 @@ function Editor({ initial, onSave }: { initial: TemplateMeta; onSave: (meta: Tem
   const removeField = (i: number) =>
     setMeta((m) => ({ ...m, fields: m.fields.filter((_, j) => j !== i) }))
   const addField = () =>
-    setMeta((m) => ({
-      ...m,
-      fields: [...m.fields, {
-        key: `field${m.fields.length + 1}`, label: 'New field', slot: 'details',
-        type: 'text', required: false, maxLength: 40,
-      }],
-    }))
+    setMeta((m) => {
+      // Length-based keys collide after a removal, and the schema rejects
+      // duplicate keys — pick the first free number instead.
+      const taken = new Set(m.fields.map((f) => f.key))
+      let n = m.fields.length + 1
+      while (taken.has(`field${n}`)) n++
+      return {
+        ...m,
+        fields: [...m.fields, {
+          key: `field${n}`, label: 'New field', slot: 'details',
+          type: 'text', required: false, maxLength: 40,
+        }],
+      }
+    })
 
   async function replaceLogo(file: File | undefined) {
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setBrand({ logo: String(reader.result) })
-    reader.readAsDataURL(file)
+    setLogoProblem(null)
+    try {
+      // Downscales to fit the render route's 1 MB asset cap; the raw-FileReader
+      // path used to save oversize logos that then failed validation at save.
+      const logo = await fileToLogoDataUri(file)
+      setBrand({ logo })
+    } catch (e) {
+      setLogoProblem(e instanceof Error ? e.message : 'Could not read that image')
+    }
   }
 
   // Sample values so the preview shows placeholders meaningfully.
@@ -170,6 +195,7 @@ function Editor({ initial, onSave }: { initial: TemplateMeta; onSave: (meta: Tem
             <input ref={logoInput} type="file" accept="image/png,image/jpeg,image/webp"
               className="hidden" onChange={(e) => replaceLogo(e.target.files?.[0])} />
           </div>
+          {logoProblem && <p className="mt-2 text-xs text-margin">{logoProblem}</p>}
         </section>
 
         <section className="ruled-card p-5 pl-12">
