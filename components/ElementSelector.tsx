@@ -122,6 +122,21 @@ export function ElementSelector({
   const [collapsed, setCollapsed] = useState(false)
   const pageRef = useRef<HTMLDivElement>(null)
 
+  // Drag sessions live in refs: pointermove fires faster than React renders,
+  // and the baseline values must not shift mid-drag as overrides update.
+  interface DragSession {
+    mode: 'seal' | 'heading' | 'resize'
+    startX: number
+    startY: number
+    baseWidthMm: number
+    baseOffsetXMm: number
+    baseOffsetYMm: number
+    baseTopMm: number
+  }
+  const drag = useRef<DragSession | null>(null)
+  // A real drag must not double as a click (which would toggle the panel).
+  const draggedRef = useRef(false)
+
   const allTabs: { id: ZoneId; label: string }[] = [
     ...tabs.map((t) => ({ id: t.id, label: t.label })),
     { id: PAGE_TAB, label: 'Page' },
@@ -181,6 +196,81 @@ export function ElementSelector({
 
   const set = <K extends keyof BrandOverrides>(key: K, val: BrandOverrides[K]) =>
     onChange({ ...overrides, [key]: val })
+
+  // Drag moves patch several keys at once; one merged object avoids stale
+  // closure reads of `overrides` between the two set() calls of a frame.
+  function patchOverrides(partial: Partial<BrandOverrides>) {
+    onChange({ ...overrides, ...partial })
+  }
+
+  function clamp(v: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, v))
+  }
+
+  /** Half-millimetre steps feel precise but never leave float dust behind. */
+  function round05(v: number): number {
+    return Math.round(v * 2) / 2
+  }
+
+  function pxPerMm(): number {
+    return (A4_WIDTH_PX / 210) * scale
+  }
+
+  function handlePointerDown(e: React.PointerEvent) {
+    if (e.button !== 0) return
+    const target = e.target as HTMLElement
+    const onHandle = !!target.closest('[data-drag-handle="logo"]')
+    const zone = target.closest('[data-zone]')?.getAttribute('data-zone')
+    const mode: DragSession['mode'] | null = onHandle
+      ? 'resize'
+      : zone === 'seal'
+        ? 'seal'
+        : zone === 'heading'
+          ? 'heading'
+          : null
+    if (!mode) return
+    e.preventDefault()
+    draggedRef.current = false
+    drag.current = {
+      mode,
+      startX: e.clientX,
+      startY: e.clientY,
+      baseWidthMm: eff.logoWidthMm,
+      baseOffsetXMm: eff.logoOffsetXMm,
+      baseOffsetYMm: eff.logoOffsetYMm,
+      baseTopMm: eff.contentTopMm,
+    }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  function handlePointerMove(e: React.PointerEvent) {
+    const d = drag.current
+    if (!d) return
+    const dxPx = e.clientX - d.startX
+    const dyPx = e.clientY - d.startY
+    if (!draggedRef.current && Math.abs(dxPx) + Math.abs(dyPx) > 4) {
+      draggedRef.current = true
+    }
+    const mmPerPx = pxPerMm()
+    if (d.mode === 'seal') {
+      patchOverrides({
+        logoOffsetXMm: clamp(round05(d.baseOffsetXMm + dxPx / mmPerPx), -80, 80),
+        logoOffsetYMm: clamp(round05(d.baseOffsetYMm + dyPx / mmPerPx), -40, 40),
+      })
+    } else if (d.mode === 'resize') {
+      patchOverrides({
+        logoWidthMm: clamp(round05(d.baseWidthMm + dxPx / mmPerPx), 20, 120),
+      })
+    } else {
+      patchOverrides({
+        contentTopMm: clamp(round05(d.baseTopMm + dyPx / mmPerPx), 5, 80),
+      })
+    }
+  }
+
+  function handlePointerUp() {
+    drag.current = null
+  }
 
   const eff = {
     font:               (overrides.font               ?? brand.font)               as BrandConfig['font'],
