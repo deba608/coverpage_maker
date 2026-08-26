@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { BrandConfig } from '@/lib/templates/types'
-import type { LayoutZone } from '@/lib/layouts/registry'
+import type { LayoutTab } from '@/lib/layouts/registry'
 import type { BrandOverrides } from '@/lib/customize'
 
 type ZoneId = string
 
-/** The always-present "whole page" tab, appended after the layout's zones. */
+/** The always-present "whole page" tab, appended after the layout's tabs. */
 const PAGE_TAB: ZoneId = 'page'
 
 const FONT_OPTIONS: BrandConfig['font'][] = ['times', 'serif', 'garamond', 'sans']
@@ -24,9 +24,8 @@ interface Props {
   overrides: BrandOverrides
   onChange: (next: BrandOverrides) => void
   children: React.ReactNode
-  scale: number
-  /** Click bands from the layout registry; a layout without zones gets no overlay. */
-  zones?: readonly LayoutZone[]
+  /** Editable-region metadata from the layout registry; drives the tab bar. */
+  tabs?: readonly LayoutTab[]
 }
 
 /* ── tiny reusable controls ── */
@@ -106,14 +105,48 @@ function ColorInput({ value, onChange }: { value: string; onChange: (v: string) 
 
 /* ── main component ── */
 
-export function ElementSelector({ brand, overrides, onChange, children, scale, zones = [] }: Props) {
-  const [active, setActive] = useState<ZoneId>(zones[0]?.id ?? PAGE_TAB)
+export function ElementSelector({ brand, overrides, onChange, children, tabs = [] }: Props) {
+  const [active, setActive] = useState<ZoneId>(tabs[0]?.id ?? PAGE_TAB)
   const [collapsed, setCollapsed] = useState(false)
+  const pageRef = useRef<HTMLDivElement>(null)
 
-  const tabs: { id: ZoneId; label: string }[] = [
-    ...zones.map((z) => ({ id: z.id, label: z.label })),
+  const allTabs: { id: ZoneId; label: string }[] = [
+    ...tabs.map((t) => ({ id: t.id, label: t.label })),
     { id: PAGE_TAB, label: 'Page' },
   ]
+
+  // Persistent outline on the active region: style the live preview DOM
+  // directly — CSS cannot key off React state. Cleaned up on every change so
+  // switching tabs (or collapsing) never leaves a stale ring behind.
+  useEffect(() => {
+    const root = pageRef.current
+    if (!root) return
+    const applied: HTMLElement[] = []
+    if (!collapsed && active !== PAGE_TAB) {
+      root
+        .querySelectorAll<HTMLElement>(`[data-zone="${CSS.escape(active)}"]`)
+        .forEach((el) => {
+          el.style.outline = '2px solid rgba(59,130,246,0.5)'
+          el.style.outlineOffset = '2px'
+          applied.push(el)
+        })
+    }
+    return () => {
+      for (const el of applied) {
+        el.style.outline = ''
+        el.style.outlineOffset = ''
+      }
+    }
+  }, [active, collapsed])
+
+  // Click whatever the user actually pointed at — no invisible band overlay.
+  // The layout tags its regions with data-zone in interactive mode.
+  function handlePreviewClick(e: React.MouseEvent) {
+    const zoneId = (e.target as HTMLElement)
+      .closest('[data-zone]')
+      ?.getAttribute('data-zone')
+    if (zoneId) handleZoneClick(zoneId)
+  }
 
   const set = <K extends keyof BrandOverrides>(key: K, val: BrandOverrides[K]) =>
     onChange({ ...overrides, [key]: val })
@@ -231,33 +264,10 @@ export function ElementSelector({ brand, overrides, onChange, children, scale, z
 
   return (
     <div className="flex flex-col gap-0">
-      {/* Preview with transparent click zones */}
-      <div className="relative w-full">
+      {/* Preview: clicks land on the real layout elements, which carry
+          data-zone tags in interactive mode. */}
+      <div ref={pageRef} className="relative w-full" onClick={handlePreviewClick}>
         {children}
-        {zones.length > 0 && (
-          <div className="pointer-events-none absolute inset-0">
-            {zones.map((zone) => {
-              const top = zone.y0 * scale
-              const height = (zone.y1 - zone.y0) * scale
-              const isActive = active === zone.id && !collapsed
-              return (
-                <div
-                  key={zone.id}
-                  className="pointer-events-auto absolute left-0 right-0 cursor-pointer"
-                  style={{
-                    top, height,
-                    background: isActive ? 'rgba(59,130,246,0.07)' : 'transparent',
-                    outline: isActive ? '2px solid rgba(59,130,246,0.4)' : 'none',
-                    outlineOffset: '-2px',
-                    transition: 'background 150ms, outline 150ms',
-                  }}
-                  onClick={() => handleZoneClick(zone.id)}
-                  title={`Edit ${zone.label}`}
-                />
-              )
-            })}
-          </div>
-        )}
       </div>
 
       {/* Properties panel */}
@@ -265,7 +275,7 @@ export function ElementSelector({ brand, overrides, onChange, children, scale, z
         {/* Tab bar */}
         <div className="flex items-center border-b border-rule">
           <div className="flex flex-1 overflow-x-auto">
-            {tabs.map((tab) => (
+            {allTabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"

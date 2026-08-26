@@ -6,19 +6,17 @@ export interface RegisteredLayout {
   /** Slots this layout renders. A template using any other slot fails the schema test. */
   slots: readonly SlotId[]
   /**
-   * Click-to-edit bands over the preview, in A4 CSS pixels at 96dpi with y
-   * measured from the page top. Layout-specific geometry, so it lives beside
-   * the layout — a generic overlay would misalign any new design.
+   * Click-to-edit regions, matching the data-zone tags the layout emits in
+   * interactive (preview) mode. Layout-specific, so it lives beside the
+   * layout — drives the editor's tab bar.
    */
-  zones?: readonly LayoutZone[]
+  tabs?: readonly LayoutTab[]
 }
 
-/** One clickable region of the preview page. */
-export interface LayoutZone {
+/** One editable region of a layout's page. */
+export interface LayoutTab {
   id: string
   label: string
-  y0: number
-  y1: number
 }
 
 /**
@@ -33,13 +31,13 @@ export const layouts: Partial<Record<LayoutId, RegisteredLayout>> = {
   'classic-seal': {
     Component: ClassicSeal,
     slots: ['title', 'subtitle', 'details'],
-    // Bands tuned against classic-seal's default geometry: heading block,
-    // seal band, the big title line, then the details box.
-    zones: [
-      { id: 'heading', label: 'Heading', y0: 0, y1: 230 },
-      { id: 'seal', label: 'Seal', y0: 230, y1: 700 },
-      { id: 'title', label: 'Title', y0: 700, y1: 840 },
-      { id: 'details', label: 'Details', y0: 840, y1: 1123 },
+    // Mirrors the data-zone tags in ClassicSeal. Subtitle maps to the
+    // title tab — the panel controls are identical.
+    tabs: [
+      { id: 'heading', label: 'Heading' },
+      { id: 'seal', label: 'Seal' },
+      { id: 'title', label: 'Title' },
+      { id: 'details', label: 'Details' },
     ],
   },
 }

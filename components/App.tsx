@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { LayoutComponent, TemplateMeta, TemplateValues } from '@/lib/templates/types'
 import { DynamicForm, isComplete } from './DynamicForm'
 import { Preview } from './Preview'
@@ -32,8 +32,6 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
     'coverpage:overrides',
     {},
   )
-  const [previewScale, setPreviewScale] = useState(0.5)
-  const onScale = useCallback((s: number) => setPreviewScale(s), [])
   const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -279,11 +277,10 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
             brand={baseMeta.brand}
             overrides={overrides}
             onChange={setOverrides}
-            scale={previewScale}
-            zones={getLayout(baseMeta.layout)?.zones}
+            tabs={getLayout(baseMeta.layout)?.tabs}
           >
-            <Preview onScale={onScale}>
-              <Component brand={meta.brand} fields={meta.fields} values={values} />
+            <Preview>
+              <Component brand={meta.brand} fields={meta.fields} values={values} interactive />
             </Preview>
           </ElementSelector>
         </section>
