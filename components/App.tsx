@@ -33,6 +33,9 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
     {},
   )
   const [downloading, setDownloading] = useState(false)
+  // Inline editing session: which field's value is being typed on the page.
+  // Lives with the other hooks — it must not sit below the early returns.
+  const [editingKey, setEditingKey] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const restoreRef = useRef<HTMLInputElement>(null)
@@ -83,6 +86,11 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
   const meta = applyOverrides(baseMeta, overrides)
 
   const complete = isComplete(meta.fields, values)
+
+  function commitEdit(key: string, raw: string) {
+    setValues({ ...values, [key]: raw.trim() })
+    setEditingKey(null)
+  }
 
   function setOverrides(next: (typeof overridesById)[string]) {
     setOverridesById({ ...overridesById, [baseMeta.id]: next })
@@ -271,16 +279,25 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
 
         <section aria-label="Preview" className="min-w-0 lg:sticky lg:top-8">
           <h2 className="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-pencil">
-            Preview — click any section to edit
+            Preview — click a section, double-click text to type
           </h2>
           <ElementSelector
             brand={baseMeta.brand}
             overrides={overrides}
             onChange={setOverrides}
             tabs={getLayout(baseMeta.layout)?.tabs}
+            onRequestEdit={setEditingKey}
           >
             <Preview>
-              <Component brand={meta.brand} fields={meta.fields} values={values} interactive />
+              <Component
+                brand={meta.brand}
+                fields={meta.fields}
+                values={values}
+                interactive
+                editingKey={editingKey}
+                onCommitEdit={commitEdit}
+                onCancelEdit={() => setEditingKey(null)}
+              />
             </Preview>
           </ElementSelector>
         </section>

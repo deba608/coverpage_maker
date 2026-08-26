@@ -26,6 +26,8 @@ interface Props {
   children: React.ReactNode
   /** Editable-region metadata from the layout registry; drives the tab bar. */
   tabs?: readonly LayoutTab[]
+  /** Double-click on a tagged value starts an inline edit for that field. */
+  onRequestEdit?: (key: string) => void
 }
 
 /* ── tiny reusable controls ── */
@@ -105,7 +107,14 @@ function ColorInput({ value, onChange }: { value: string; onChange: (v: string) 
 
 /* ── main component ── */
 
-export function ElementSelector({ brand, overrides, onChange, children, tabs = [] }: Props) {
+export function ElementSelector({
+  brand,
+  overrides,
+  onChange,
+  children,
+  tabs = [],
+  onRequestEdit,
+}: Props) {
   const [active, setActive] = useState<ZoneId>(tabs[0]?.id ?? PAGE_TAB)
   const [collapsed, setCollapsed] = useState(false)
   const pageRef = useRef<HTMLDivElement>(null)
@@ -139,13 +148,32 @@ export function ElementSelector({ brand, overrides, onChange, children, tabs = [
     }
   }, [active, collapsed])
 
-  // Click whatever the user actually pointed at — no invisible band overlay.
-  // The layout tags its regions with data-zone in interactive mode.
+  // Click selects a region's tab; double-click on a tagged field value enters
+  // inline text editing. Both delegate off the live preview DOM.
   function handlePreviewClick(e: React.MouseEvent) {
+    // Keystrokes moving the caret inside the open editor must not flip tabs
+    // or toggle the panel — clicks there are text edits, not selection.
+    if ((e.target as HTMLElement).closest('[data-editing]')) return
     const zoneId = (e.target as HTMLElement)
       .closest('[data-zone]')
       ?.getAttribute('data-zone')
     if (zoneId) handleZoneClick(zoneId)
+  }
+
+  function handlePreviewDoubleClick(e: React.MouseEvent) {
+    const key = (e.target as HTMLElement)
+      .closest('[data-field-key]')
+      ?.getAttribute('data-field-key')
+    if (!key || !onRequestEdit) return
+    onRequestEdit(key)
+    // Jump the panel to the region that owns the value, if it has one.
+    const zoneId = (e.target as HTMLElement)
+      .closest('[data-zone]')
+      ?.getAttribute('data-zone')
+    if (zoneId) {
+      setActive(zoneId)
+      setCollapsed(false)
+    }
   }
 
   const set = <K extends keyof BrandOverrides>(key: K, val: BrandOverrides[K]) =>
@@ -264,9 +292,15 @@ export function ElementSelector({ brand, overrides, onChange, children, tabs = [
 
   return (
     <div className="flex flex-col gap-0">
-      {/* Preview: clicks land on the real layout elements, which carry
-          data-zone tags in interactive mode. */}
-      <div ref={pageRef} className="relative w-full" onClick={handlePreviewClick}>
+      {/* Preview: clicks select a region, double-click on text edits it.
+          Layouts tag regions with data-zone and values with data-field-key
+          in interactive mode. */}
+      <div
+        ref={pageRef}
+        className="relative w-full"
+        onClick={handlePreviewClick}
+        onDoubleClick={handlePreviewDoubleClick}
+      >
         {children}
       </div>
 
