@@ -97,10 +97,18 @@ export interface LayoutProps {
   values: TemplateValues
   /**
    * True only in the on-screen preview: the layout then tags its editable
-   * regions with data-zone attributes so the editor can offer click-to-edit.
-   * Never set on the PDF path, which must stay a clean static document.
+   * regions with data-zone attributes and its field values with
+   * data-field-key, so the editor can offer click-to-edit and double-click
+   * inline typing. Never set on the PDF path, which must stay a clean static
+   * document.
    */
   interactive?: boolean
+  /** Field key with a live inline editor (interactive mode only). */
+  editingKey?: string | null
+  /** Blur/Enter ends the edit; the trimmed text becomes the field value. */
+  onCommitEdit?: (key: string, value: string) => void
+  /** Escape abandons the edit; the previous value stays. */
+  onCancelEdit?: () => void
 }
 
 /**
