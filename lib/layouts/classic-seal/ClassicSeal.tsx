@@ -144,7 +144,14 @@ export function ClassicSeal({
         </div>
 
         <div className="cs-logo-band" {...zoneProps('seal')}>
-          {brand.logo && <img className="cs-logo" src={brand.logo} alt="" />}
+          {/* The wrap shrink-wraps the image so the resize handle rides its
+              corner without disturbing flex alignment or printed geometry. */}
+          <span className="cs-logo-wrap">
+            {brand.logo && (
+              <img className="cs-logo" src={brand.logo} alt="" draggable={false} />
+            )}
+            {interactive && <span className="cs-resize-handle" data-drag-handle="logo" />}
+          </span>
         </div>
 
         {title && (

@@ -196,3 +196,36 @@
   outline: 2px solid rgba(59, 130, 246, 0.45);
   outline-offset: 2px;
 }
+
+/* Drag affordances (preview only): seal moves in X and Y, heading drags the
+ * content top, the blue square on the seal's corner resizes it. */
+.cs-page[data-interactive] [data-zone='seal'] {
+  cursor: move;
+}
+
+.cs-page[data-interactive] [data-zone='heading'] {
+  cursor: ns-resize;
+}
+
+.cs-logo-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.cs-resize-handle {
+  display: none;
+}
+
+.cs-page[data-interactive] .cs-resize-handle {
+  display: block;
+  position: absolute;
+  right: -2.5mm;
+  bottom: -2.5mm;
+  width: 5mm;
+  height: 5mm;
+  box-sizing: border-box;
+  border: 0.6mm solid #fff;
+  border-radius: 1mm;
+  background: rgba(59, 130, 246, 0.85);
+  cursor: nwse-resize;
+}

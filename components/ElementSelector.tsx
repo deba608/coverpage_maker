@@ -10,6 +10,9 @@ type ZoneId = string
 /** The always-present "whole page" tab, appended after the layout's tabs. */
 const PAGE_TAB: ZoneId = 'page'
 
+/** A4 at 96dpi. Dividing by 210 mm width converts drag px to real mm. */
+const A4_WIDTH_PX = 794
+
 const FONT_OPTIONS: BrandConfig['font'][] = ['times', 'serif', 'garamond', 'sans']
 const FONT_LABELS: Record<BrandConfig['font'], string> = {
   times: 'Times New Roman', serif: 'Serif', garamond: 'Garamond', sans: 'Sans-serif',
