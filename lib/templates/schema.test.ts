@@ -88,9 +88,23 @@ describe('templateMetaSchema', () => {
         logoWidthMm: 65,
         logoAlign: 'left',
         logoOffsetYMm: -10,
+        logoOffsetXMm: 12,
       },
     }
     expect(() => templateMetaSchema.parse(withLogo)).not.toThrow()
+  })
+
+  it('rejects out-of-range logo offsets', () => {
+    const tooFarY = {
+      ...valid,
+      brand: { ...valid.brand, logoOffsetYMm: -51 },
+    }
+    expect(() => templateMetaSchema.parse(tooFarY)).toThrow()
+    const tooFarX = {
+      ...valid,
+      brand: { ...valid.brand, logoOffsetXMm: 81 },
+    }
+    expect(() => templateMetaSchema.parse(tooFarX)).toThrow()
   })
 
   it('rejects duplicate field keys', () => {

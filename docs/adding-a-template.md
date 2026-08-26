@@ -67,7 +67,10 @@ node scripts/make-thumb.mjs your-id
 | `institution` | 1–3 lines, biggest first |
 | `font` | `times` · `serif` · `sans` · `garamond` |
 | `border` | `double` · `single` · `none` |
-| `logoWidthMm` | number, default 55 |
+| `logoWidthMm` | number, default 55 (20–120) |
+| `logoAlign` | `left` · `center` · `right`, default center |
+| `logoOffsetYMm` | number −50…50, default 0 |
+| `logoOffsetXMm` | number −80…80, default 0 |
 | `accentColor` | `#rrggbb`, default black |
 
 | `field.slot` | Renders as |

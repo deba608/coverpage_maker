@@ -66,6 +66,31 @@ describe('ClassicSeal', () => {
     expect(html).toContain('--cs-logo-offset-y:12mm')
   })
 
+  it('emits the horizontal offset variable', () => {
+    const html = renderToStaticMarkup(
+      <ClassicSeal
+        brand={{ ...meta.brand, logoOffsetXMm: -8 }}
+        fields={meta.fields}
+        values={full}
+      />,
+    )
+    expect(html).toContain('--cs-logo-offset-x:-8mm')
+  })
+
+  it('shows the drag-resize handle only in interactive mode', () => {
+    const pdf = renderToStaticMarkup(
+      <ClassicSeal brand={{ ...meta.brand, logoOffsetXMm: -8 }} fields={meta.fields} values={full} />,
+    )
+    expect(pdf).not.toContain('data-drag-handle')
+    expect(pdf).not.toContain('data-interactive')
+
+    const preview = renderToStaticMarkup(
+      <ClassicSeal brand={meta.brand} fields={meta.fields} values={full} interactive />,
+    )
+    expect(preview).toContain('data-drag-handle="logo"')
+    expect(preview).toContain('cs-resize-handle')
+  })
+
   it('tags values and zones only in interactive mode — the PDF path stays clean', () => {
     const pdf = renderToStaticMarkup(
       <ClassicSeal brand={meta.brand} fields={meta.fields} values={full} />,

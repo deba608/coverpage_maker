@@ -7,6 +7,14 @@ template, fill the form, watch the live preview, download the PDF.
 component) is written once; every template on it is a `template.json` plus a
 logo — no CSS, no code. See [docs/adding-a-template.md](docs/adding-a-template.md).
 
+## Editing in the preview
+
+The page is the editor: click a section to open its controls, double-click any
+text to type it in place, drag the seal to move it (X/Y), drag the heading
+block to shift the content top, and pull the blue corner handle on the seal to
+resize it. Everything maps onto the same brand knobs the PDF route uses, so
+what you arrange is exactly what prints.
+
 ## Stack
 
 Next.js 16 (App Router) · TypeScript · Tailwind (app shell only) · zod ·
