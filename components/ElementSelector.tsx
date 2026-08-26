@@ -31,6 +31,11 @@ interface Props {
   tabs?: readonly LayoutTab[]
   /** Double-click on a tagged value starts an inline edit for that field. */
   onRequestEdit?: (key: string) => void
+  /**
+   * Preview scale (container px / A4 px). Drag deltas are measured in screen
+   * px, so converting them to mm needs the current zoom factor.
+   */
+  scale: number
 }
 
 /* ── tiny reusable controls ── */
@@ -117,6 +122,7 @@ export function ElementSelector({
   children,
   tabs = [],
   onRequestEdit,
+  scale,
 }: Props) {
   const [active, setActive] = useState<ZoneId>(tabs[0]?.id ?? PAGE_TAB)
   const [collapsed, setCollapsed] = useState(false)
@@ -169,6 +175,11 @@ export function ElementSelector({
   // Click selects a region's tab; double-click on a tagged field value enters
   // inline text editing. Both delegate off the live preview DOM.
   function handlePreviewClick(e: React.MouseEvent) {
+    // A drag ends with a click event; it must not also flip the panel.
+    if (draggedRef.current) {
+      draggedRef.current = false
+      return
+    }
     // Keystrokes moving the caret inside the open editor must not flip tabs
     // or toggle the panel — clicks there are text edits, not selection.
     if ((e.target as HTMLElement).closest('[data-editing]')) return
@@ -390,14 +401,19 @@ export function ElementSelector({
 
   return (
     <div className="flex flex-col gap-0">
-      {/* Preview: clicks select a region, double-click on text edits it.
-          Layouts tag regions with data-zone and values with data-field-key
-          in interactive mode. */}
+      {/* Preview: clicks select a region, double-click on text edits it,
+          drags move/resize the seal and heading. Layouts tag regions with
+          data-zone, values with data-field-key, and the seal's resize
+          handle with data-drag-handle in interactive mode. */}
       <div
         ref={pageRef}
         className="relative w-full"
         onClick={handlePreviewClick}
         onDoubleClick={handlePreviewDoubleClick}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
       >
         {children}
       </div>

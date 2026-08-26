@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { LayoutComponent, TemplateMeta, TemplateValues } from '@/lib/templates/types'
 import { DynamicForm, isComplete } from './DynamicForm'
 import { Preview } from './Preview'
@@ -33,6 +33,10 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
     {},
   )
   const [downloading, setDownloading] = useState(false)
+  // Preview zoom, fed back by <Preview> — drag math converts screen px to mm
+  // with it. Starts at the same default Preview uses pre-measurement.
+  const [previewScale, setPreviewScale] = useState(0.5)
+  const onScale = useCallback((s: number) => setPreviewScale(s), [])
   // Inline editing session: which field's value is being typed on the page.
   // Lives with the other hooks — it must not sit below the early returns.
   const [editingKey, setEditingKey] = useState<string | null>(null)
@@ -287,8 +291,9 @@ export function App({ templates }: { templates: TemplateMeta[] }) {
             onChange={setOverrides}
             tabs={getLayout(baseMeta.layout)?.tabs}
             onRequestEdit={setEditingKey}
+            scale={previewScale}
           >
-            <Preview>
+            <Preview onScale={onScale}>
               <Component
                 brand={meta.brand}
                 fields={meta.fields}
